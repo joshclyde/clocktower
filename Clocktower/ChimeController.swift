@@ -1,11 +1,18 @@
 import SwiftUI
 import UserNotifications
 
-/// iPhone app state. Every change is saved and rescheduled.
+/// iPhone app state. The iPhone is the source of truth: every change is saved, rescheduled, and pushed to the watch.
 @MainActor @Observable
 final class ChimeController {
     private(set) var settings = SettingsStore.load()
     private(set) var authorization: UNAuthorizationStatus = .notDetermined
+
+    init() {
+        PhoneSync.shared.onReceive = { [weak self] settings in
+            Task { @MainActor in self?.apply(settings) }
+        }
+        PhoneSync.shared.activate()
+    }
 
     func binding<Value>(_ keyPath: WritableKeyPath<ChimeSettings, Value>) -> Binding<Value> {
         Binding(
@@ -21,7 +28,7 @@ final class ChimeController {
     }
 
     /// Called when the app becomes active: picks up widget changes, asks for notification
-    /// permission on first launch, and refills the notification window.
+    /// permission on first launch, refills the notification window, and syncs the watch.
     func refresh() async {
         settings = SettingsStore.load()
 
@@ -32,11 +39,13 @@ final class ChimeController {
         authorization = await center.notificationSettings().authorizationStatus
 
         ChimeScheduler.reschedule(settings)
+        PhoneSync.shared.push(settings)
     }
 
     private func apply(_ settings: ChimeSettings) {
         self.settings = settings
         SettingsStore.save(settings)
         ChimeScheduler.reschedule(settings)
+        PhoneSync.shared.push(settings)
     }
 }
