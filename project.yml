@@ -1,0 +1,89 @@
+# XcodeGen spec. Run `xcodegen` to (re)generate Clocktower.xcodeproj.
+name: Clocktower
+
+options:
+  deploymentTarget:
+    iOS: "18.0"
+    watchOS: "11.0"
+  createIntermediateGroups: true
+
+configFiles:
+  Debug: Config/Base.xcconfig
+  Release: Config/Base.xcconfig
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    GENERATE_INFOPLIST_FILE: YES
+
+targets:
+  # iOS app
+  Clocktower:
+    type: application
+    platform: iOS
+    sources: [Clocktower]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.joshclyde.clocktower
+        INFOPLIST_KEY_CFBundleDisplayName: Clocktower
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+    dependencies:
+      - target: ClocktowerWidget
+      - target: ClocktowerWatch
+        copy:
+          destination: productsDirectory
+          subpath: $(CONTENTS_FOLDER_PATH)/Watch
+    scheme:
+      testTargets: [ClocktowerTests]
+
+  # iOS Home Screen / Lock Screen widget
+  ClocktowerWidget:
+    type: app-extension
+    platform: iOS
+    sources: [ClocktowerWidget, Shared]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.joshclyde.clocktower.widget
+        INFOPLIST_KEY_CFBundleDisplayName: Clocktower
+        SKIP_INSTALL: YES
+
+  # watchOS app (single-target, companion to the iOS app)
+  ClocktowerWatch:
+    type: application
+    platform: watchOS
+    sources: [ClocktowerWatch]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.joshclyde.clocktower.watchkitapp
+        INFOPLIST_KEY_CFBundleDisplayName: Clocktower
+        INFOPLIST_KEY_WKCompanionAppBundleIdentifier: com.joshclyde.clocktower
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        SKIP_INSTALL: YES
+    dependencies:
+      - target: ClocktowerWatchWidget
+    scheme: {}
+
+  # watchOS complication (WidgetKit)
+  ClocktowerWatchWidget:
+    type: app-extension
+    platform: watchOS
+    sources: [ClocktowerWatchWidget, Shared]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.joshclyde.clocktower.watchkitapp.widget
+        INFOPLIST_KEY_CFBundleDisplayName: Clocktower
+        SKIP_INSTALL: YES
+
+  ClocktowerTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [ClocktowerTests]
+    dependencies:
+      - target: Clocktower
