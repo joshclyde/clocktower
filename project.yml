@@ -59,7 +59,7 @@ targets:
   ClocktowerWatch:
     type: application
     platform: watchOS
-    sources: [ClocktowerWatch]
+    sources: [ClocktowerWatch, Shared]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.joshclyde.clocktower.watchkitapp
