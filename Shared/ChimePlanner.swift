@@ -33,13 +33,15 @@ enum ChimePlanner {
         }
 
         // Too many (15, 20 min): the next 64 slots as one-shots. The last one asks the user to reopen the app.
+        // IDs are still per time of day (no time repeats within 64 slots), so today's 9:00 replaces yesterday's.
         let dates = upcomingSlots(after: now, intervalMinutes: interval, count: maxPending, calendar: calendar)
         return dates.enumerated().map { index, date in
             let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: date)
-            let text = message(hour: components.hour!, minute: components.minute!, settings)
+            let hour = components.hour!, minute = components.minute!
+            let text = message(hour: hour, minute: minute, settings)
             let isLast = index == dates.count - 1
             return ChimeRequest(
-                id: "chime-\(Int(date.timeIntervalSince1970))",
+                id: String(format: "chime-%02d%02d", hour, minute),
                 title: isLast ? text : nil,
                 body: isLast ? ChimeText.keepGoingReminder : text,
                 dateComponents: components,
