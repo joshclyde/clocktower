@@ -8,6 +8,11 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
+                Text(ChimeText.appDescription)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .listRowBackground(Color.clear)
+
                 Toggle(isOn: controller.binding(\.isEnabled)) {
                     Label("Chimes", systemImage: settings.isEnabled ? "bell.fill" : "bell.slash")
                 }

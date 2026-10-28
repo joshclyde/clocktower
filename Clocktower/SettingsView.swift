@@ -12,6 +12,13 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    Text(ChimeText.appDescription)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .listRowBackground(Color.clear)
+                }
+
                 if controller.authorization == .denied {
                     Section {
                         Label("Notifications are off for Clocktower.", systemImage: "exclamationmark.triangle")

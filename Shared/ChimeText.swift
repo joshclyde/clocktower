@@ -3,6 +3,9 @@ import Foundation
 enum ChimeText {
     static let keepGoingReminder = "Open Clocktower to keep chimes going"
 
+    /// What the app does, shown at the top of the settings UI.
+    static let appDescription = "Clocktower sends you a notification with the time on a regular schedule that follows the clock, like every 15 minutes at :00, :15, :30, and :45."
+
     /// "1:20 PM" (12-hour) or "13:20" (24-hour).
     static func time(hour: Int, minute: Int, clock: ClockFormat) -> String {
         switch clock {
