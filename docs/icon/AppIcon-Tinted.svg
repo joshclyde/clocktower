@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="1024" height="1024">
+  <!-- Clocktower app icon (AppIcon-Tinted): a clock tower at dusk. Export at 1024x1024, no alpha. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#000000"/>
+      <stop offset="0.50" stop-color="#141414"/>
+      <stop offset="0.78" stop-color="#383838"/>
+      <stop offset="1" stop-color="#5e5e5e"/>
+    </linearGradient>
+  </defs>
+  <rect width="100" height="100" fill="url(#sky)"/>
+  <g fill="#bdbdbd">
+    <circle cx="17" cy="13" r=".9"/>
+    <circle cx="29" cy="24" r=".6"/>
+    <circle cx="79" cy="11" r=".8"/>
+    <circle cx="87" cy="29" r=".6"/>
+    <circle cx="12" cy="35" r=".5"/>
+    <circle cx="70" cy="21" r=".5"/>
+  </g>
+  <g fill="#1a1a1a">
+    <path d="M0 100 V86 H9 V81 H17 V88 H27 V84 H35 V100 Z"/>
+    <path d="M65 100 V85 H72 V79 H80 V87 H90 V82 H100 V100 Z"/>
+  </g>
+  <g fill="#000000">
+    <path d="M42 26.5 L50 5 L58 26.5 Z"/>
+    <rect x="41" y="26" width="18" height="12"/>
+    <rect x="39" y="37" width="22" height="3"/>
+    <rect x="40" y="40" width="20" height="22"/>
+    <rect x="37" y="62" width="26" height="3"/>
+    <rect x="38" y="65" width="24" height="35"/>
+  </g>
+  <g fill="#ffffff">
+    <path d="M46.5 37 V32.5 a3.5 3.5 0 0 1 7 0 V37 Z" opacity=".45"/>
+    <rect x="48.5" y="74" width="3" height="6.5" rx="1.5" opacity=".6"/>
+    <circle cx="50" cy="51" r="7.4"/>
+  </g>
+  <!-- Hands at 1:20 -->
+  <g stroke="#000000" stroke-linecap="round" fill="none">
+    <line x1="50" y1="51" x2="54.8" y2="53.8" stroke-width="1.4"/>
+    <line x1="50" y1="51" x2="52.3" y2="48.2" stroke-width="1.7"/>
+  </g>
+</svg>
