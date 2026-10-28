@@ -54,6 +54,14 @@ struct SettingsView: View {
                     .pickerStyle(.segmented)
                 }
 
+                Section {
+                    Toggle(isOn: controller.binding(\.isTimeSensitive)) {
+                        Label("Time Sensitive", systemImage: "moon")
+                    }
+                } footer: {
+                    Text("Chimes come through even when a Focus is on.")
+                }
+
                 if notificationsOn {
                     Section("Tips") {
                         TipRow("Notifications are on for Clocktower.", systemImage: "bell.badge", isGood: true) {
