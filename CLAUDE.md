@@ -6,13 +6,14 @@ iOS + watchOS app (with iOS widget and watchOS complication). The Xcode project 
 
 - Always open a pull request for your changes once they're pushed.
 
-### Large changes: stacked PRs into a feature branch
+### Large changes: stacked PRs
 
-Split any large change (more than ~300 changed lines, or several separate concerns) into small PRs the user can review one at a time:
+Split any large change (more than ~300 changed lines, or several separate concerns) into a [stack of PRs](https://docs.github.com/en/pull-requests/get-started/about-stacked-prs) that the user reviews and merges one at a time:
 
-1. Create `feature/<name>` from `main` and push it.
-2. Split the work into ordered sub-PRs. Each covers one concern and builds and passes tests on its own. Branch each one from the previous one (`feature/<name>-1-<slug>`, `feature/<name>-2-<slug>`, …) and open every sub-PR **against `feature/<name>`**.
-3. Title sub-PRs `[<name> 1/N] …`. In each body, say which PR must merge before it.
-4. Once the first sub-PR is merged (GitHub needs a commit to diff), open `feature/<name>` → `main` as the project PR. It summarizes the whole change and lists the sub-PRs in merge order.
-5. The user merges sub-PRs in order with **merge commits** (not squash or rebase), so each later PR's diff shrinks to just its own changes. They merge the project PR last.
-6. Push review fixes to that sub-PR's branch, then merge that branch into the later sub-branches.
+1. Split the work into ordered layers. Each layer covers one concern and builds and passes tests on its own.
+2. Branch each layer from the one below it: `<name>-1-<slug>`, `<name>-2-<slug>`, …
+3. The bottom PR targets `main`. Every other PR targets **the branch of the PR below it**, so each diff shows only its own layer. There is no separate feature branch or project PR.
+4. If the [`gh stack`](https://docs.github.com/en/pull-requests/reference/stacked-prs-cli-commands) extension is available (`gh extension install github/gh-stack`), create the stack with `gh stack init` / `add` / `submit`, or link existing PRs with `gh stack link`. Otherwise, set the PR bases by hand as in step 3.
+5. Title each PR `[<name> n/N] …`. In each body, name the PR below and the PR above it.
+6. The user merges from the bottom up. Once the bottom PR merges, the next PR is retargeted onto `main`. GitHub does this automatically for linked stacks; otherwise, retarget it yourself and merge `main` into it.
+7. Commit review fixes to that layer's branch, then carry them up the stack with `gh stack rebase --upstack`, or by merging the fixed branch into each layer above it.
