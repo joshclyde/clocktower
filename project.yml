@@ -24,7 +24,7 @@ targets:
   Clocktower:
     type: application
     platform: iOS
-    sources: [Clocktower]
+    sources: [Clocktower, Shared]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.joshclyde.clocktower
