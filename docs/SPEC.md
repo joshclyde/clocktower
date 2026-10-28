@@ -52,7 +52,7 @@ reschedule(settings):
 ```
 
 - Content: title = time text (e.g. "1:20"). The last one-shot chime adds body "Open Clocktower to keep chimes going".
-- IDs: `chime-HHmm` (repeating) or `chime-<epoch>` (one-shot), so a reschedule replaces everything.
+- IDs: `chime-HHmm` in both modes (no time of day repeats within 64 one-shots). A new delivery replaces the uncleared one from the day before in Notification Center instead of piling up (to confirm on device).
 - Refill (15/20 min): on app launch/foreground, any settings change, background app refresh (best-effort), watch message, widget toggle.
 
 ## Sync
