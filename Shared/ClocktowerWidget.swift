@@ -3,58 +3,75 @@ import WidgetKit
 
 // Shared by the iOS widget and the watchOS complication.
 
-struct ClocktowerEntry: TimelineEntry {
+struct ChimeEntry: TimelineEntry {
     let date: Date
+    let isEnabled: Bool
 }
 
-struct ClocktowerProvider: TimelineProvider {
-    func placeholder(in context: Context) -> ClocktowerEntry {
-        ClocktowerEntry(date: .now)
+struct ChimeProvider: TimelineProvider {
+    func placeholder(in context: Context) -> ChimeEntry {
+        ChimeEntry(date: .now, isEnabled: true)
     }
 
-    func getSnapshot(in context: Context, completion: @escaping (ClocktowerEntry) -> Void) {
-        completion(ClocktowerEntry(date: .now))
+    func getSnapshot(in context: Context, completion: @escaping (ChimeEntry) -> Void) {
+        completion(currentEntry())
     }
 
-    func getTimeline(in context: Context, completion: @escaping (Timeline<ClocktowerEntry>) -> Void) {
-        completion(Timeline(entries: [ClocktowerEntry(date: .now)], policy: .never))
+    // Reloaded by SettingsStore.save, so no refresh policy is needed.
+    func getTimeline(in context: Context, completion: @escaping (Timeline<ChimeEntry>) -> Void) {
+        completion(Timeline(entries: [currentEntry()], policy: .never))
+    }
+
+    private func currentEntry() -> ChimeEntry {
+        ChimeEntry(date: .now, isEnabled: SettingsStore.load().isEnabled)
     }
 }
 
 struct ClocktowerWidgetView: View {
     @Environment(\.widgetFamily) private var family
-    let entry: ClocktowerEntry
+    let entry: ChimeEntry
 
+    private var icon: String { entry.isEnabled ? "bell.fill" : "bell.slash" }
+    private var status: String { entry.isEnabled ? "Chimes On" : "Chimes Off" }
+
+    // Display only: tapping the widget or complication opens the app (the system default).
     var body: some View {
         switch family {
-        case .accessoryInline:
-            Label("Clocktower", systemImage: "bell")
-        case .accessoryCircular:
-            ZStack {
-                AccessoryWidgetBackground()
-                Image(systemName: "bell.fill")
-                    .font(.title2)
-            }
-        case .accessoryRectangular:
+        #if os(iOS)
+        case .systemSmall:
             VStack(alignment: .leading) {
+                Image(systemName: icon)
+                    .font(.title)
+                    .foregroundStyle(.tint)
+                Spacer()
                 Text("Clocktower")
                     .font(.headline)
-                Text("No chimes set")
-                    .font(.caption)
+                Text(status)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        #endif
+        case .accessoryInline:
+            Label(status, systemImage: icon)
+        case .accessoryRectangular:
+            VStack(alignment: .leading) {
+                Label("Clocktower", systemImage: icon)
+                    .font(.headline)
+                Text(status)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         #if os(watchOS)
         case .accessoryCorner:
-            Image(systemName: "bell.fill")
+            Image(systemName: icon)
                 .font(.title3)
+                .widgetLabel(status)
         #endif
         default:
-            VStack(spacing: 8) {
-                Image(systemName: "bell.badge")
-                    .font(.largeTitle)
-                    .foregroundStyle(.tint)
-                Text("Clocktower")
-                    .font(.headline)
+            ZStack {
+                AccessoryWidgetBackground()
+                Image(systemName: icon)
+                    .font(.title2)
             }
         }
     }
@@ -68,12 +85,12 @@ struct ClocktowerWidget: Widget {
     #endif
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: "ClocktowerWidget", provider: ClocktowerProvider()) { entry in
+        StaticConfiguration(kind: "ClocktowerWidget", provider: ChimeProvider()) { entry in
             ClocktowerWidgetView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("Clocktower")
-        .description("Your next chime.")
+        .description("Shows whether chimes are on.")
         .supportedFamilies(Self.families)
     }
 }
