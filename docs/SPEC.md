@@ -14,6 +14,7 @@ Notifications at clock-aligned intervals, e.g. every 15 min → 1:00, 1:15, 1:30
 - Chimes land on clock boundaries (20 min → :00, :20, :40), not relative to when enabled.
 - Defaults: **ON, 20 min, "1:20 PM", 12-hour, Time Sensitive off**.
 - Notification permission is requested on first launch. If denied, the app shows a banner linking to Settings.
+- When notifications are allowed, a **Tips** section at the bottom of the iOS settings says so and shows whether Siri announces chimes (Announce Notifications), with a link to Settings when it doesn't.
 - Default notification sound. Interruption level is standard, or Time Sensitive (comes through a Focus) when that toggle is on.
 
 ## Data model
