@@ -13,10 +13,12 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 Section {
-                    Text(ChimeText.appDescription)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .listRowBackground(Color.clear)
+                    TimelineView(.everyMinute) { context in
+                        Text(ChimeText.appDescription(for: settings, now: context.date))
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .listRowBackground(Color.clear)
                 }
 
                 if controller.authorization == .denied {

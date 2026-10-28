@@ -3,9 +3,6 @@ import Foundation
 enum ChimeText {
     static let keepGoingReminder = "Open Clocktower to keep chimes going"
 
-    /// What the app does, shown at the top of the settings UI.
-    static let appDescription = "Clocktower sends you a notification with the time on a regular schedule that follows the clock, like every 15 minutes at :00, :15, :30, and :45."
-
     /// "1:20 PM" (12-hour) or "13:20" (24-hour).
     static func time(hour: Int, minute: Int, clock: ClockFormat) -> String {
         switch clock {
@@ -28,5 +25,33 @@ enum ChimeText {
     /// Example message shown in the settings UI.
     static func sample(style: MessageStyle, clock: ClockFormat) -> String {
         message(hour: 13, minute: 20, style: style, clock: clock)
+    }
+
+    /// What the app does, shown at the top of the settings UI, with the next chime times for these settings.
+    static func appDescription(for settings: ChimeSettings, now: Date, calendar: Calendar = .current) -> String {
+        let summary = "Clocktower sends you a notification with the time \(schedule(for: settings.interval))."
+        guard settings.isEnabled else {
+            return "\(summary) Chimes are off, so turn them on to start."
+        }
+        let next = ChimePlanner.upcomingSlots(after: now, intervalMinutes: settings.interval.minutes, count: 3, calendar: calendar)
+            .map { date in
+                let components = calendar.dateComponents([.hour, .minute], from: date)
+                return time(hour: components.hour!, minute: components.minute!, clock: settings.clock)
+            }
+        return "\(summary) Next: \(list(next))."
+    }
+
+    /// "every 20 minutes, at :00, :20, and :40" or "every hour, on the hour".
+    private static func schedule(for interval: ChimeInterval) -> String {
+        if interval == .m60 { return "every hour, on the hour" }
+        let marks = stride(from: 0, to: 60, by: interval.minutes).map { String(format: ":%02d", $0) }
+        let shown = marks.count <= 4 ? list(marks) : marks.prefix(3).joined(separator: ", ") + ", and so on"
+        return "every \(interval.minutes) minutes, at \(shown)"
+    }
+
+    /// "a and b" or "a, b, and c".
+    private static func list(_ items: [String]) -> String {
+        if items.count <= 2 { return items.joined(separator: " and ") }
+        return items.dropLast().joined(separator: ", ") + ", and " + items.last!
     }
 }
