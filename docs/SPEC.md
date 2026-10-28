@@ -6,7 +6,7 @@ Notifications at clock-aligned intervals, e.g. every 15 min → 1:00, 1:15, 1:30
 
 | Surface | Behavior |
 | --- | --- |
-| iOS app | Master ON/OFF · interval buttons **15 / 20 / 30 / 60 min** (single select) · message **"1:20 PM"** or **"The time is 1:20 PM"** · clock **12-hour / 24-hour** |
+| iOS app | Master ON/OFF · interval buttons **5 / 10 / 15 / 20 / 30 / 60 min** (single select) · message **"1:20 PM"** or **"The time is 1:20 PM"** · clock **12-hour / 24-hour** |
 | watchOS app | Same controls as iOS |
 | iOS widget | Bell icon and text reflect ON/OFF (display only); tap opens the app |
 | watchOS complication | Bell icon reflects ON/OFF (`bell.fill` / `bell.slash`); tap opens the watch app |
@@ -19,7 +19,7 @@ Notifications at clock-aligned intervals, e.g. every 15 min → 1:00, 1:15, 1:30
 ## Data model
 
 ```swift
-enum ChimeInterval: Int, Codable, CaseIterable { case m15 = 15, m20 = 20, m30 = 30, m60 = 60 }
+enum ChimeInterval: Int, Codable, CaseIterable { case m5 = 5, m10 = 10, m15 = 15, m20 = 20, m30 = 30, m60 = 60 }
 enum MessageStyle: String, Codable, CaseIterable { case timeOnly, sentence }   // "1:20 PM" / "The time is 1:20 PM"
 enum ClockFormat: String, Codable, CaseIterable { case twelveHour, twentyFourHour } // "1:20 PM" / "13:20"
 
@@ -37,23 +37,23 @@ struct ChimeSettings: Codable, Equatable {
 
 ## Notification scheduling
 
-iOS keeps at most **64 pending notifications** per app (a repeating request counts as 1), and content is fixed per request. A repeating "every :15" request can't say "1:15" one hour and "2:15" the next, so each time of day needs its own request: 96 (15 min), 72 (20), 48 (30), 24 (60).
+iOS keeps at most **64 pending notifications** per app (a repeating request counts as 1), and content is fixed per request. A repeating "every :15" request can't say "1:15" one hour and "2:15" the next, so each time of day needs its own request: 288 (5 min), 144 (10), 96 (15), 72 (20), 48 (30), 24 (60).
 
 ```
 reschedule(settings):
   remove all pending chimes
   if !isEnabled: return
-  slots = times of day where minute % interval == 0       // 96 / 72 / 48 / 24
+  slots = times of day where minute % interval == 0       // 288 / 144 / 96 / 72 / 48 / 24
   if slots.count <= 64:                                    // 30, 60 min
       one request per slot, repeats daily (hour + minute)  → never runs out
-  else:                                                    // 15, 20 min
-      next 64 slots from now, one-shot                     → ~16 h / ~21 h of coverage
+  else:                                                    // 5, 10, 15, 20 min
+      next 64 slots from now, one-shot                     → ~5 / ~11 / ~16 / ~21 h of coverage
       last one also says "Open Clocktower to keep chimes going"
 ```
 
 - Content: body = message (e.g. "1:20"); iOS hides notifications with an empty body. The last one-shot chime uses title = message, body = "Open Clocktower to keep chimes going".
 - IDs: `chime-HHmm` in both modes (no time of day repeats within 64 one-shots). A new delivery replaces the uncleared one from the day before in Notification Center instead of piling up (to confirm on device).
-- Refill (15/20 min): on app launch/foreground, any settings change, background app refresh (best-effort), watch message.
+- Refill (5–20 min): on app launch/foreground, any settings change, background app refresh (best-effort), watch message.
 
 ## Sync
 

@@ -39,18 +39,18 @@ struct ChimePlannerTests {
         #expect(result.first?.dateComponents == DateComponents(hour: 0, minute: 0))
     }
 
-    @Test(arguments: [ChimeInterval.m15, .m20])
-    func shortIntervalsFillRollingWindow(interval: ChimeInterval) {
+    @Test(arguments: zip([ChimeInterval.m5, .m10, .m15, .m20], [10, 10, 15, 20]))
+    func shortIntervalsFillRollingWindow(interval: ChimeInterval, firstMinute: Int) {
         let now = date(13, 7)
         let result = requests(ChimeSettings(interval: interval), now: now)
 
         #expect(result.count == ChimePlanner.maxPending)
         #expect(result.allSatisfy { !$0.repeats })
         #expect(Set(result.map(\.id)).count == result.count)
-        #expect(result.first?.id == (interval == .m15 ? "chime-1315" : "chime-1320"))
+        #expect(result.first?.id == String(format: "chime-13%02d", firstMinute))
 
         let first = calendar.date(from: result.first!.dateComponents)!
-        #expect(first == date(13, interval == .m15 ? 15 : 20))
+        #expect(first == date(13, firstMinute))
 
         let last = calendar.date(from: result.last!.dateComponents)!
         #expect(last == first.addingTimeInterval(TimeInterval(63 * interval.minutes * 60)))
