@@ -40,3 +40,8 @@ Re-run `xcodegen` after editing `project.yml` or adding/removing files.
 
 - iOS widget: long-press Home Screen → Edit → Add Widget → Clocktower.
 - Complication: long-press watch face → Edit → Complications → Clocktower.
+
+## App Icon
+
+- Sources: `docs/icon/AppIcon.svg` (default), `AppIcon-Dark.svg`, `AppIcon-Tinted.svg` (grayscale; iOS applies the tint).
+- After editing, export each at 1024×1024 PNG **without alpha** into `Clocktower/Assets.xcassets/AppIcon.appiconset/` (same file names). The watch uses a copy of `AppIcon.png` in `ClocktowerWatch/Assets.xcassets/AppIcon.appiconset/`.
