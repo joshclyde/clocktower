@@ -27,29 +27,15 @@ enum ChimeText {
         message(hour: 13, minute: 20, style: style, clock: clock)
     }
 
-    /// Shown under the Chimes toggle: what the app does and the next chime times for these settings.
-    static func appDescription(for settings: ChimeSettings, now: Date, calendar: Calendar = .current) -> String {
+    /// Shown under the Chimes toggle, e.g. "Get notifications every 5 minutes.\nExample: 1:00 PM, 1:05 PM, 1:10 PM".
+    static func appDescription(for settings: ChimeSettings) -> String {
         guard settings.isEnabled else { return "Chimes are off." }
-        let summary = "Clocktower sends you a notification with the time \(schedule(for: settings.interval))."
-        let next = ChimePlanner.upcomingSlots(after: now, intervalMinutes: settings.interval.minutes, count: 3, calendar: calendar)
-            .map { date in
-                let components = calendar.dateComponents([.hour, .minute], from: date)
-                return time(hour: components.hour!, minute: components.minute!, clock: settings.clock)
-            }
-        return "\(summary) Next: \(list(next))."
-    }
-
-    /// "every 20 minutes, at :00, :20, and :40" or "every hour, on the hour".
-    private static func schedule(for interval: ChimeInterval) -> String {
-        if interval == .m60 { return "every hour, on the hour" }
-        let marks = stride(from: 0, to: 60, by: interval.minutes).map { String(format: ":%02d", $0) }
-        let shown = marks.count <= 4 ? list(marks) : marks.prefix(3).joined(separator: ", ") + ", and so on"
-        return "every \(interval.minutes) minutes, at \(shown)"
-    }
-
-    /// "a and b" or "a, b, and c".
-    private static func list(_ items: [String]) -> String {
-        if items.count <= 2 { return items.joined(separator: " and ") }
-        return items.dropLast().joined(separator: ", ") + ", and " + items.last!
+        let minutes = settings.interval.minutes
+        let every = minutes == 60 ? "every hour" : "every \(minutes) minutes"
+        let example = (0..<3).map { index in
+            let minuteOfDay = 13 * 60 + index * minutes
+            return time(hour: minuteOfDay / 60, minute: minuteOfDay % 60, clock: settings.clock)
+        }
+        return "Get notifications \(every).\nExample: \(example.joined(separator: ", "))"
     }
 }

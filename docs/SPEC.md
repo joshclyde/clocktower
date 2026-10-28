@@ -6,7 +6,7 @@ Notifications at clock-aligned intervals, e.g. every 15 min → 1:00, 1:15, 1:30
 
 | Surface | Behavior |
 | --- | --- |
-| iOS app | Master ON/OFF, with a description under it: the schedule and next 3 chime times for the current settings (e.g. "every 20 minutes, at :00, :20, and :40. Next: 1:20 PM, 1:40 PM, and 2:00 PM."), or "Chimes are off." · interval buttons **5 / 10 / 15 / 20 / 30 / 60 min** (single select) · message **"1:20 PM"** or **"The time is 1:20 PM"** · clock **12-hour / 24-hour** · **Time Sensitive** toggle |
+| iOS app | Master ON/OFF, with a description under it: the interval and 3 example times in the chosen clock format (e.g. "Get notifications every 5 minutes." / "Example: 1:00 PM, 1:05 PM, 1:10 PM"), or "Chimes are off." · interval buttons **5 / 10 / 15 / 20 / 30 / 60 min** (single select) · message **"1:20 PM"** or **"The time is 1:20 PM"** · clock **12-hour / 24-hour** · **Time Sensitive** toggle |
 | watchOS app | Same controls as iOS |
 | iOS widget | Bell icon and text reflect ON/OFF (display only); tap opens the app |
 | watchOS complication | Bell icon reflects ON/OFF (`bell.fill` / `bell.slash`); tap opens the watch app |

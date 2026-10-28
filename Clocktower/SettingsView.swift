@@ -24,9 +24,7 @@ struct SettingsView: View {
                         Label("Chimes", systemImage: settings.isEnabled ? "bell.fill" : "bell.slash")
                     }
                 } footer: {
-                    TimelineView(.everyMinute) { context in
-                        Text(ChimeText.appDescription(for: settings, now: context.date))
-                    }
+                    Text(ChimeText.appDescription(for: settings))
                 }
 
                 Section("Every") {
