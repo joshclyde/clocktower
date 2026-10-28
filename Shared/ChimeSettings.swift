@@ -1,7 +1,7 @@
 import Foundation
 
 enum ChimeInterval: Int, Codable, CaseIterable, Identifiable {
-    case m15 = 15, m20 = 20, m30 = 30, m60 = 60
+    case m5 = 5, m10 = 10, m15 = 15, m20 = 20, m30 = 30, m60 = 60
 
     var id: Self { self }
     var minutes: Int { rawValue }

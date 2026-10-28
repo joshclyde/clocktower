@@ -26,7 +26,7 @@ struct SettingsView: View {
                 }
 
                 Section("Every") {
-                    HStack {
+                    LazyVGrid(columns: Array(repeating: GridItem(), count: 3)) {
                         ForEach(ChimeInterval.allCases) { interval in
                             ChoiceButton(title: interval.label, isSelected: settings.interval == interval) {
                                 controller.update { $0.interval = interval }

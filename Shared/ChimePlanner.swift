@@ -32,7 +32,7 @@ enum ChimePlanner {
             }
         }
 
-        // Too many (15, 20 min): the next 64 slots as one-shots. The last one asks the user to reopen the app.
+        // Too many (5, 10, 15, 20 min): the next 64 slots as one-shots. The last one asks the user to reopen the app.
         // IDs are still per time of day (no time repeats within 64 slots), so today's 9:00 replaces yesterday's.
         let dates = upcomingSlots(after: now, intervalMinutes: interval, count: maxPending, calendar: calendar)
         return dates.enumerated().map { index, date in
