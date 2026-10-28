@@ -15,6 +15,7 @@ enum ChimeScheduler {
             }
             content.body = chime.body
             content.sound = .default
+            content.interruptionLevel = settings.isTimeSensitive ? .timeSensitive : .active
 
             let trigger = UNCalendarNotificationTrigger(dateMatching: chime.dateComponents, repeats: chime.repeats)
             center.add(UNNotificationRequest(identifier: chime.id, content: content, trigger: trigger))

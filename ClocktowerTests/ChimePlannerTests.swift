@@ -18,7 +18,13 @@ struct ChimePlannerTests {
     }
 
     @Test func defaults() {
-        #expect(ChimeSettings() == ChimeSettings(isEnabled: true, interval: .m20, style: .timeOnly, clock: .twelveHour))
+        #expect(ChimeSettings() == ChimeSettings(isEnabled: true, interval: .m20, style: .timeOnly, clock: .twelveHour, isTimeSensitive: false))
+    }
+
+    @Test func decodesSettingsSavedBeforeTimeSensitive() throws {
+        let json = #"{"isEnabled":false,"interval":30,"style":"sentence","clock":"twentyFourHour"}"#
+        let settings = try JSONDecoder().decode(ChimeSettings.self, from: Data(json.utf8))
+        #expect(settings == ChimeSettings(isEnabled: false, interval: .m30, style: .sentence, clock: .twentyFourHour, isTimeSensitive: false))
     }
 
     @Test func disabledSchedulesNothing() {
