@@ -71,6 +71,7 @@ struct SettingsView: View {
                             TipRow("Siri reads chimes aloud in your headphones.", systemImage: "airpods", isGood: true) {
                                 Text("With AirPods or other supported headphones connected, Siri reads each chime to you. To stop, turn off Announce Notifications for Clocktower in Settings.")
                             }
+                            Link("Open Settings", destination: notificationSettingsURL)
                         } else if controller.announcement == .disabled {
                             TipRow("Turn on Announce Notifications to hear chimes in your headphones.", systemImage: "speaker.wave.2", isGood: false) {
                                 Text("Siri can read each chime aloud while AirPods or other supported headphones are connected. In Settings → Notifications → Announce Notifications, turn it on, then turn on Clocktower.")
