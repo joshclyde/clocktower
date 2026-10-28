@@ -8,8 +8,12 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
-                Toggle(isOn: controller.binding(\.isEnabled)) {
-                    Label("Chimes", systemImage: settings.isEnabled ? "bell.fill" : "bell.slash")
+                Section {
+                    Toggle(isOn: controller.binding(\.isEnabled)) {
+                        Label("Chimes", systemImage: settings.isEnabled ? "bell.fill" : "bell.slash")
+                    }
+                } footer: {
+                    Text(ChimeText.appDescription(for: settings))
                 }
 
                 Section("Every") {

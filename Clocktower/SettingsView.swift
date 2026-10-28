@@ -23,6 +23,8 @@ struct SettingsView: View {
                     Toggle(isOn: controller.binding(\.isEnabled)) {
                         Label("Chimes", systemImage: settings.isEnabled ? "bell.fill" : "bell.slash")
                     }
+                } footer: {
+                    Text(ChimeText.appDescription(for: settings))
                 }
 
                 Section("Every") {
