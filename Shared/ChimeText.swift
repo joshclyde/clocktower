@@ -3,12 +3,12 @@ import Foundation
 enum ChimeText {
     static let keepGoingReminder = "Open Clocktower to keep chimes going"
 
-    /// "1:20" (12-hour, no AM/PM) or "13:20" (24-hour).
+    /// "1:20 PM" (12-hour) or "13:20" (24-hour).
     static func time(hour: Int, minute: Int, clock: ClockFormat) -> String {
         switch clock {
         case .twelveHour:
             let h = hour % 12 == 0 ? 12 : hour % 12
-            return String(format: "%d:%02d", h, minute)
+            return String(format: "%d:%02d %@", h, minute, hour < 12 ? "AM" : "PM")
         case .twentyFourHour:
             return String(format: "%02d:%02d", hour, minute)
         }

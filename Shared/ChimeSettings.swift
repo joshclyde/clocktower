@@ -9,14 +9,14 @@ enum ChimeInterval: Int, Codable, CaseIterable, Identifiable {
 }
 
 enum MessageStyle: String, Codable, CaseIterable, Identifiable {
-    case timeOnly   // "1:20"
-    case sentence   // "The time is 1:20"
+    case timeOnly   // "1:20 PM"
+    case sentence   // "The time is 1:20 PM"
 
     var id: Self { self }
 }
 
 enum ClockFormat: String, Codable, CaseIterable, Identifiable {
-    case twelveHour     // "1:20"
+    case twelveHour     // "1:20 PM"
     case twentyFourHour // "13:20"
 
     var id: Self { self }
