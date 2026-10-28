@@ -5,6 +5,9 @@ struct SettingsView: View {
 
     private var settings: ChimeSettings { controller.settings }
     private let notificationSettingsURL = URL(string: UIApplication.openNotificationSettingsURLString)!
+    private var notificationsOn: Bool {
+        controller.authorization != .denied && controller.authorization != .notDetermined
+    }
 
     var body: some View {
         NavigationStack {
@@ -13,17 +16,6 @@ struct SettingsView: View {
                     Section {
                         Label("Notifications are off for Clocktower.", systemImage: "exclamationmark.triangle")
                         Link("Open Settings", destination: notificationSettingsURL)
-                    }
-                } else if controller.announcement != .notSupported {
-                    Section {
-                        if controller.announcement == .enabled {
-                            Label("Siri reads chimes aloud in your headphones.", systemImage: "airpods")
-                        } else {
-                            Label("Turn on Announce Notifications to hear chimes in your headphones.", systemImage: "speaker.wave.2")
-                            Link("Open Settings", destination: notificationSettingsURL)
-                        }
-                    } header: {
-                        Text("Read Aloud")
                     }
                 }
 
@@ -60,6 +52,18 @@ struct SettingsView: View {
                         }
                     }
                     .pickerStyle(.segmented)
+                }
+
+                if notificationsOn {
+                    Section("Tips") {
+                        Label("Notifications are on for Clocktower.", systemImage: "bell.badge")
+                        if controller.announcement == .enabled {
+                            Label("Siri reads chimes aloud in your headphones.", systemImage: "airpods")
+                        } else if controller.announcement == .disabled {
+                            Label("Turn on Announce Notifications to hear chimes in your headphones.", systemImage: "speaker.wave.2")
+                            Link("Open Settings", destination: notificationSettingsURL)
+                        }
+                    }
                 }
             }
             .navigationTitle("Clocktower")
