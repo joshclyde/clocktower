@@ -44,6 +44,12 @@ struct SettingsView: View {
                     }
                     .listRowBackground(Color.clear)
                 }
+
+                Section {
+                    Toggle("Time Sensitive", isOn: controller.binding(\.isTimeSensitive))
+                } footer: {
+                    Text("Chimes come through even when a Focus is on.")
+                }
             }
             .navigationTitle("Clocktower")
         }

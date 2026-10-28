@@ -29,6 +29,21 @@ struct ChimeSettings: Codable, Equatable {
     var interval: ChimeInterval = .m20
     var style: MessageStyle = .timeOnly
     var clock: ClockFormat = .twelveHour
+    /// Deliver chimes as Time Sensitive so they come through a Focus.
+    var isTimeSensitive = false
+}
+
+extension ChimeSettings {
+    /// Decodes field by field so settings saved before a field existed keep their other values.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let defaults = ChimeSettings()
+        isEnabled = try container.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? defaults.isEnabled
+        interval = try container.decodeIfPresent(ChimeInterval.self, forKey: .interval) ?? defaults.interval
+        style = try container.decodeIfPresent(MessageStyle.self, forKey: .style) ?? defaults.style
+        clock = try container.decodeIfPresent(ClockFormat.self, forKey: .clock) ?? defaults.clock
+        isTimeSensitive = try container.decodeIfPresent(Bool.self, forKey: .isTimeSensitive) ?? defaults.isTimeSensitive
+    }
 }
 
 // MARK: - WatchConnectivity payload

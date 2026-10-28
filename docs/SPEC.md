@@ -6,15 +6,15 @@ Notifications at clock-aligned intervals, e.g. every 15 min → 1:00, 1:15, 1:30
 
 | Surface | Behavior |
 | --- | --- |
-| iOS app | Master ON/OFF · interval buttons **5 / 10 / 15 / 20 / 30 / 60 min** (single select) · message **"1:20 PM"** or **"The time is 1:20 PM"** · clock **12-hour / 24-hour** |
+| iOS app | Master ON/OFF · interval buttons **5 / 10 / 15 / 20 / 30 / 60 min** (single select) · message **"1:20 PM"** or **"The time is 1:20 PM"** · clock **12-hour / 24-hour** · **Time Sensitive** toggle |
 | watchOS app | Same controls as iOS |
 | iOS widget | Bell icon and text reflect ON/OFF (display only); tap opens the app |
 | watchOS complication | Bell icon reflects ON/OFF (`bell.fill` / `bell.slash`); tap opens the watch app |
 
 - Chimes land on clock boundaries (20 min → :00, :20, :40), not relative to when enabled.
-- Defaults: **ON, 20 min, "1:20 PM", 12-hour**.
+- Defaults: **ON, 20 min, "1:20 PM", 12-hour, Time Sensitive off**.
 - Notification permission is requested on first launch. If denied, the app shows a banner linking to Settings.
-- Default notification sound, standard interruption level (not Time Sensitive).
+- Default notification sound. Interruption level is standard, or Time Sensitive (comes through a Focus) when that toggle is on.
 
 ## Data model
 
@@ -28,6 +28,7 @@ struct ChimeSettings: Codable, Equatable {
     var interval: ChimeInterval = .m20
     var style: MessageStyle = .timeOnly
     var clock: ClockFormat = .twelveHour
+    var isTimeSensitive = false
 }
 ```
 
