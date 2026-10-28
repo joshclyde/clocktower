@@ -27,12 +27,10 @@ enum ChimeText {
         message(hour: 13, minute: 20, style: style, clock: clock)
     }
 
-    /// What the app does, shown at the top of the settings UI, with the next chime times for these settings.
+    /// Shown under the Chimes toggle: what the app does and the next chime times for these settings.
     static func appDescription(for settings: ChimeSettings, now: Date, calendar: Calendar = .current) -> String {
+        guard settings.isEnabled else { return "Chimes are off." }
         let summary = "Clocktower sends you a notification with the time \(schedule(for: settings.interval))."
-        guard settings.isEnabled else {
-            return "\(summary) Chimes are off, so turn them on to start."
-        }
         let next = ChimePlanner.upcomingSlots(after: now, intervalMinutes: settings.interval.minutes, count: 3, calendar: calendar)
             .map { date in
                 let components = calendar.dateComponents([.hour, .minute], from: date)

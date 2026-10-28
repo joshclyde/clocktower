@@ -12,15 +12,6 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section {
-                    TimelineView(.everyMinute) { context in
-                        Text(ChimeText.appDescription(for: settings, now: context.date))
-                    }
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .listRowBackground(Color.clear)
-                }
-
                 if controller.authorization == .denied {
                     Section {
                         Label("Notifications are off for Clocktower.", systemImage: "exclamationmark.triangle")
@@ -31,6 +22,10 @@ struct SettingsView: View {
                 Section {
                     Toggle(isOn: controller.binding(\.isEnabled)) {
                         Label("Chimes", systemImage: settings.isEnabled ? "bell.fill" : "bell.slash")
+                    }
+                } footer: {
+                    TimelineView(.everyMinute) { context in
+                        Text(ChimeText.appDescription(for: settings, now: context.date))
                     }
                 }
 

@@ -47,7 +47,6 @@ struct ChimeTextTests {
     }
 
     @Test func descriptionWhenOff() {
-        #expect(description(ChimeSettings(isEnabled: false), now: 13, 7)
-            == "Clocktower sends you a notification with the time every 20 minutes, at :00, :20, and :40. Chimes are off, so turn them on to start.")
+        #expect(description(ChimeSettings(isEnabled: false), now: 13, 7) == "Chimes are off.")
     }
 }

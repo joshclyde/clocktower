@@ -8,15 +8,14 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
-                TimelineView(.everyMinute) { context in
-                    Text(ChimeText.appDescription(for: settings, now: context.date))
-                }
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .listRowBackground(Color.clear)
-
-                Toggle(isOn: controller.binding(\.isEnabled)) {
-                    Label("Chimes", systemImage: settings.isEnabled ? "bell.fill" : "bell.slash")
+                Section {
+                    Toggle(isOn: controller.binding(\.isEnabled)) {
+                        Label("Chimes", systemImage: settings.isEnabled ? "bell.fill" : "bell.slash")
+                    }
+                } footer: {
+                    TimelineView(.everyMinute) { context in
+                        Text(ChimeText.appDescription(for: settings, now: context.date))
+                    }
                 }
 
                 Section("Every") {
