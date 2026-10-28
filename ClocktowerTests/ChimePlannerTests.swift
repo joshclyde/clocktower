@@ -47,6 +47,7 @@ struct ChimePlannerTests {
         #expect(result.count == ChimePlanner.maxPending)
         #expect(result.allSatisfy { !$0.repeats })
         #expect(Set(result.map(\.id)).count == result.count)
+        #expect(result.first?.id == (interval == .m15 ? "chime-1315" : "chime-1320"))
 
         let first = calendar.date(from: result.first!.dateComponents)!
         #expect(first == date(13, interval == .m15 ? 15 : 20))
