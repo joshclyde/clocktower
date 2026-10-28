@@ -7,6 +7,8 @@ final class ChimeController {
     private(set) var settings = SettingsStore.load()
     /// Whether the user allowed notifications for this app. `SettingsView` shows a banner when denied.
     private(set) var authorization: UNAuthorizationStatus = .notDetermined
+    /// Whether Siri reads Clocktower's notifications aloud (Settings → Notifications → Announce Notifications).
+    private(set) var announcement: UNNotificationSetting = .notSupported
 
     init() {
         PhoneSync.shared.onReceive = { [weak self] settings in
@@ -39,7 +41,9 @@ final class ChimeController {
             _ = try? await center.requestAuthorization(options: [.alert, .sound])
         }
         // The user's answer, or whatever they later set in Settings → Notifications.
-        authorization = await center.notificationSettings().authorizationStatus
+        let notificationSettings = await center.notificationSettings()
+        authorization = notificationSettings.authorizationStatus
+        announcement = notificationSettings.announcementSetting
 
         ChimeScheduler.reschedule(settings)
         PhoneSync.shared.push(settings)

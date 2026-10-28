@@ -4,6 +4,7 @@ struct SettingsView: View {
     @Environment(ChimeController.self) private var controller
 
     private var settings: ChimeSettings { controller.settings }
+    private let notificationSettingsURL = URL(string: UIApplication.openNotificationSettingsURLString)!
 
     var body: some View {
         NavigationStack {
@@ -11,7 +12,18 @@ struct SettingsView: View {
                 if controller.authorization == .denied {
                     Section {
                         Label("Notifications are off for Clocktower.", systemImage: "exclamationmark.triangle")
-                        Link("Open Settings", destination: URL(string: UIApplication.openNotificationSettingsURLString)!)
+                        Link("Open Settings", destination: notificationSettingsURL)
+                    }
+                } else if controller.announcement != .notSupported {
+                    Section {
+                        if controller.announcement == .enabled {
+                            Label("Siri reads chimes aloud in your headphones.", systemImage: "airpods")
+                        } else {
+                            Label("Turn on Announce Notifications to hear chimes in your headphones.", systemImage: "speaker.wave.2")
+                            Link("Open Settings", destination: notificationSettingsURL)
+                        }
+                    } header: {
+                        Text("Read Aloud")
                     }
                 }
 
