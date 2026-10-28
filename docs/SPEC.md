@@ -8,7 +8,7 @@ Notifications at clock-aligned intervals, e.g. every 15 min → 1:00, 1:15, 1:30
 | --- | --- |
 | iOS app | Master ON/OFF · interval buttons **15 / 20 / 30 / 60 min** (single select) · message **"1:20 PM"** or **"The time is 1:20 PM"** · clock **12-hour / 24-hour** |
 | watchOS app | Same controls as iOS |
-| iOS widget | Shows ON/OFF; tapping toggles it (interactive widget) |
+| iOS widget | Bell icon and text reflect ON/OFF (display only); tap opens the app |
 | watchOS complication | Bell icon reflects ON/OFF (`bell.fill` / `bell.slash`); tap opens the watch app |
 
 - Chimes land on clock boundaries (20 min → :00, :20, :40), not relative to when enabled.
@@ -32,7 +32,7 @@ struct ChimeSettings: Codable, Equatable {
 ```
 
 - Stored as one JSON blob in App Group `UserDefaults` (`group.com.joshclyde.clocktower`), shared by app + widget on each device.
-- `Shared/` holds the model, store, formatter, and toggle intent, compiled into all targets.
+- `Shared/` holds the model, store, formatter, and widget, compiled into all targets.
 - 12-hour times include AM/PM ("1:20 PM"); 24-hour times don't ("13:20").
 
 ## Notification scheduling
@@ -53,7 +53,7 @@ reschedule(settings):
 
 - Content: body = message (e.g. "1:20"); iOS hides notifications with an empty body. The last one-shot chime uses title = message, body = "Open Clocktower to keep chimes going".
 - IDs: `chime-HHmm` in both modes (no time of day repeats within 64 one-shots). A new delivery replaces the uncleared one from the day before in Notification Center instead of piling up (to confirm on device).
-- Refill (15/20 min): on app launch/foreground, any settings change, background app refresh (best-effort), watch message, widget toggle.
+- Refill (15/20 min): on app launch/foreground, any settings change, background app refresh (best-effort), watch message.
 
 ## Sync
 
@@ -66,7 +66,3 @@ iPhone = source of truth and the only scheduler
                  watch saves context to its App Group → reloads complication
 Watch notifications = iPhone notifications mirrored to the watch (no watch scheduling, no duplicates)
 ```
-
-## Risks to verify early
-
-- **Widget toggle process:** the toggle intent may run in the widget extension. If it can't reschedule or reach the watch from there, the iPhone app reconciles on its next launch or background refresh.

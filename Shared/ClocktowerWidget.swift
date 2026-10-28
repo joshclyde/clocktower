@@ -34,41 +34,24 @@ struct ClocktowerWidgetView: View {
     private var icon: String { entry.isEnabled ? "bell.fill" : "bell.slash" }
     private var status: String { entry.isEnabled ? "Chimes On" : "Chimes Off" }
 
+    // Display only: tapping the widget or complication opens the app (the system default).
     var body: some View {
-        #if os(iOS)
-        if family == .systemSmall {
-            smallView
-        } else {
-            Button(intent: ToggleChimesIntent(value: !entry.isEnabled)) {
-                accessoryView
-            }
-            .buttonStyle(.plain)
-        }
-        #else
-        accessoryView
-        #endif
-    }
-
-    #if os(iOS)
-    private var smallView: some View {
-        VStack(alignment: .leading) {
-            Image(systemName: icon)
-                .font(.title)
-                .foregroundStyle(.tint)
-            Spacer()
-            Text("Clocktower")
-                .font(.headline)
-            Toggle(isOn: entry.isEnabled, intent: ToggleChimesIntent()) {
-                Text(entry.isEnabled ? "On" : "Off")
-                    .font(.subheadline)
-            }
-        }
-    }
-    #endif
-
-    @ViewBuilder
-    private var accessoryView: some View {
         switch family {
+        #if os(iOS)
+        case .systemSmall:
+            VStack(alignment: .leading) {
+                Image(systemName: icon)
+                    .font(.title)
+                    .foregroundStyle(.tint)
+                Spacer()
+                Text("Clocktower")
+                    .font(.headline)
+                Text(status)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        #endif
         case .accessoryInline:
             Label(status, systemImage: icon)
         case .accessoryRectangular:
