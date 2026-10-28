@@ -5,6 +5,7 @@ import UserNotifications
 @MainActor @Observable
 final class ChimeController {
     private(set) var settings = SettingsStore.load()
+    /// Whether the user allowed notifications for this app. `SettingsView` shows a banner when denied.
     private(set) var authorization: UNAuthorizationStatus = .notDetermined
 
     func binding<Value>(_ keyPath: WritableKeyPath<ChimeSettings, Value>) -> Binding<Value> {
@@ -26,9 +27,11 @@ final class ChimeController {
         settings = SettingsStore.load()
 
         let center = UNUserNotificationCenter.current()
+        // First launch only: shows the system "Allow Notifications?" prompt. iOS allows asking once.
         if await center.notificationSettings().authorizationStatus == .notDetermined {
             _ = try? await center.requestAuthorization(options: [.alert, .sound])
         }
+        // The user's answer, or whatever they later set in Settings → Notifications.
         authorization = await center.notificationSettings().authorizationStatus
 
         ChimeScheduler.reschedule(settings)
