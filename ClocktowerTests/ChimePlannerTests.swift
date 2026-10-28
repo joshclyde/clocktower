@@ -35,7 +35,7 @@ struct ChimePlannerTests {
         #expect(result.allSatisfy { $0.repeats && $0.title == nil })
         #expect(Set(result.map(\.id)).count == count)
         #expect(result.first?.id == "chime-0000")
-        #expect(result.first?.body == "12:00")
+        #expect(result.first?.body == "12:00 AM")
         #expect(result.first?.dateComponents == DateComponents(hour: 0, minute: 0))
     }
 
@@ -59,7 +59,7 @@ struct ChimePlannerTests {
         let result = requests(ChimeSettings(interval: .m20, style: .sentence), now: date(13, 7))
 
         #expect(result.first?.title == nil)
-        #expect(result.first?.body == "The time is 1:20")
+        #expect(result.first?.body == "The time is 1:20 PM")
         #expect(result.dropLast().allSatisfy { $0.title == nil && $0.body != ChimeText.keepGoingReminder })
         #expect(result.last?.title?.hasPrefix("The time is ") == true)
         #expect(result.last?.body == ChimeText.keepGoingReminder)
