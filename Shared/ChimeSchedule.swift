@@ -112,6 +112,12 @@ extension ChimeSettings {
         return activeSchedules.contains { $0.applies(to: weekday) && $0.contains(time) }
     }
 
+    /// Applies `change` to the schedule with `id`, if it still exists.
+    mutating func updateSchedule(_ id: ChimeSchedule.ID, _ change: (inout ChimeSchedule) -> Void) {
+        guard let index = schedules.firstIndex(where: { $0.id == id }) else { return }
+        change(&schedules[index])
+    }
+
     /// The Today section: active schedules for `date`'s weekday, by start time.
     func todaysSchedules(at date: Date, calendar: Calendar) -> [ChimeSchedule] {
         let weekday = Weekday(of: date, calendar: calendar)
