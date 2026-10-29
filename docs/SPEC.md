@@ -80,16 +80,30 @@ reschedule(settings):
   remove all pending chimes
   if !isEnabled: return
   slots = times of day where minute % interval == 0       // 288 / 144 / 96 / 72 / 48 / 24
-  if slots.count <= 64:                                    // 30, 60 min
-      one request per slot, repeats daily (hour + minute)  → never runs out
-  else:                                                    // 5, 10, 15, 20 min
-      next 64 slots from now, one-shot                     → ~5 / ~11 / ~16 / ~21 h of coverage
+  repeating = for each slot:
+      chimes every weekday  → one daily request (hour + minute)
+      chimes on some days   → one weekly request per day (weekday + hour + minute)
+  if repeating.count <= 64 and no schedule turned off for today would still chime before midnight:
+      schedule repeating                                   → never runs out
+  else:
+      next 64 slots from now that fire, one-shot (looking up to 14 days ahead)
       last one also says "Open Clocktower to keep chimes going"
 ```
 
+| Settings | Requests |
+| --- | --- |
+| Infinite, 30 / 60 min | 48 / 24 daily repeating |
+| Infinite, 5 / 10 / 15 / 20 min | 64 one-shots → ~5 / ~11 / ~16 / ~21 h of coverage |
+| Mon–Fri 9 AM–5 PM + Sat–Sun 10 AM–midnight, 30 min | 51 repeating: 15 daily (10 AM–5 PM), 10 weekly (9:00, 9:30 on weekdays), 26 weekly (5:30–11:30 PM on weekends) |
+| Same, 20 min, at Thu 2:10 PM | 64 one-shots: Thu 2:20 PM … Sat 7:40 PM |
+| Same, 30 min, Mon–Fri turned off for today at Thu 2:10 PM | 64 one-shots from Fri 9:00 AM … Sun 7:00 PM; back to 51 repeating at the first refresh after midnight |
+| Same, turned off for today at Thu 6:00 PM | 51 repeating: today's window has passed, so nothing changes |
+| Infinite off, no active schedules | none |
+
+- A repeating request can't skip one day, so a schedule turned off for today switches to one-shots until midnight.
 - Content: body = message (e.g. "1:20"); iOS hides notifications with an empty body. The last one-shot chime uses title = message, body = "Open Clocktower to keep chimes going".
-- IDs: `chime-HHmm` in both modes (no time of day repeats within 64 one-shots). A new delivery replaces the uncleared one from the day before in Notification Center instead of piling up (to confirm on device).
-- Refill (5–20 min): on app launch/foreground, any settings change, background app refresh (best-effort), watch message.
+- IDs: `chime-HHmm` per time of day, so a new delivery replaces the uncleared one from the day before in Notification Center instead of piling up (to confirm on device). Weekly requests add the weekday (`chime-0900-2` = Mondays 9:00), so they replace last week's. A one-shot time of day that comes up again within the 64 adds the date (`chime-1420-20260116`).
+- Refill (one-shots): on app launch/foreground, any settings change, background app refresh (best-effort), watch message.
 
 ## Sync
 
