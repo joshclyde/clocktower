@@ -23,19 +23,53 @@ Notifications at clock-aligned intervals, e.g. every 15 min → 1:00, 1:15, 1:30
 enum ChimeInterval: Int, Codable, CaseIterable { case m5 = 5, m10 = 10, m15 = 15, m20 = 20, m30 = 30, m60 = 60 }
 enum MessageStyle: String, Codable, CaseIterable { case timeOnly, sentence }   // "1:20 PM" / "The time is 1:20 PM"
 enum ClockFormat: String, Codable, CaseIterable { case twelveHour, twentyFourHour } // "1:20 PM" / "13:20"
+enum Weekday: Int, Codable, CaseIterable { case sunday = 1, monday, …, saturday } // Calendar weekday numbers
+
+struct TimeOfDay: Codable, Hashable, Comparable { var hour: Int; var minute: Int }
+
+struct ChimeSchedule: Codable, Equatable, Identifiable {
+    var id = UUID()
+    var isEnabled = true                     // the schedule's own toggle
+    var start = TimeOfDay(hour: 9)
+    var end: TimeOfDay? = TimeOfDay(hour: 17) // nil = until midnight
+    var weekdays: Set<Weekday> = []          // empty = every day
+    var skippedUntil: Date?                  // turned off for today → the next midnight
+}
 
 struct ChimeSettings: Codable, Equatable {
-    var isEnabled = true
+    var isEnabled = true          // master toggle
+    var isInfinite = true         // chime all day, every day; off → follow the schedules
     var interval: ChimeInterval = .m20
     var style: MessageStyle = .timeOnly
     var clock: ClockFormat = .twelveHour
     var isTimeSensitive = false
+    var isScheduleEnabled = true  // turns all schedules on or off
+    var schedules: [ChimeSchedule] = []
 }
 ```
 
-- Stored as one JSON blob in App Group `UserDefaults` (`group.com.joshclyde.clocktower`), shared by app + widget on each device.
+- Stored as one JSON blob in App Group `UserDefaults` (`group.com.joshclyde.clocktower`), shared by app + widget on each device. Fields missing from older saves take their defaults, so existing users keep Infinite on and chime as before.
 - `Shared/` holds the model, store, formatter, and widget, compiled into all targets.
 - 12-hour times include AM/PM ("1:20 PM"); 24-hour times don't ("13:20").
+
+## Which chimes fire
+
+```
+chimes(at date):
+  if !isEnabled:  false                              // master off: nothing, whatever else is set
+  if isInfinite:  true                               // every slot, every day; schedules ignored
+  any schedule where
+      isScheduleEnabled && schedule.isEnabled        // "active" schedules
+      && schedule applies to date's weekday          // no days selected = every day
+      && start <= time <= (end ?? 11:59 PM)          // an explicit end time fires; midnight belongs to the next day
+      && !(date < schedule.skippedUntil)             // not turned off for today
+```
+
+- Slots are still clock-aligned (20 min → :00, :20, :40). A window that starts off a boundary chimes from the next one (9:10 → 9:20).
+- `end` is always after `start`; the end-time picker only offers later times.
+- Overlapping schedules chime once per slot. Turning one off for today leaves the slots the other covers.
+- Turning a schedule off for today sets `skippedUntil` to the next midnight, so it turns itself back on; turning it back on clears it.
+- Infinite off with no active schedules means no chimes. The master toggle's description says so: "No chimes scheduled. Turn on Infinite or a schedule."
 
 ## Notification scheduling
 
