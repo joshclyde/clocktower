@@ -40,3 +40,14 @@ Let the user see every notification Clocktower has asked iOS to deliver, and why
   - **Over the 64 limit** (5, 10, 15, 20 min): only the next 64 are scheduled, ending at a given time. Chimes stop then unless the app is opened (or background refresh tops them up), and the last one reminds the user to open it.
 - Empty state when chimes are off or notifications aren't allowed.
 - Open questions: whether the watch app gets the same view for its own pending notifications, and whether to group the list by day.
+
+## Cleaner history for stacked PRs
+
+Change the stacked-PR workflow in [CLAUDE.md](../CLAUDE.md) so the history isn't full of merge commits. Today each layer merges into `feature/<name>` with a merge commit, review fixes get merged up through every layer above, and `main` gets merged into `feature/<name>`, so a single feature can add a pile of "Merge pull request…" and "Merge branch…" commits.
+
+- Options:
+  - **Squash the project PR** (`feature/<name>` → `main`): the feature lands on `main` as one commit, whatever happened on the feature branch. Simplest; loses the per-layer commits on `main`.
+  - **Squash or rebase-merge each layer**, then rebase the layers above onto `feature/<name>` (`git rebase --onto`, or `git rebase --update-refs` to move the whole stack at once) and force-push them. Without the rebase, GitHub shows the lower layer's changes again in the next PR's diff, because its original commits are no longer ancestors.
+  - **Rebase instead of merge** for review fixes and for bringing in `main`, again with force-pushes on the stack branches.
+- Whatever's chosen, update steps 6–9 of the CLAUDE.md workflow and the repo's allowed merge methods in GitHub settings to match.
+- Open questions: whether per-layer commits are worth keeping on `main`, and whether force-pushing stack branches with open PRs is acceptable (it rewrites what the user may have already reviewed).
