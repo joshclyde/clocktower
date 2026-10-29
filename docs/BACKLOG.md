@@ -67,3 +67,12 @@ Stop the iOS app from rotating on iPhone; it should stay in portrait. The settin
 - Set the supported orientations for the `Clocktower` target in `project.yml` (the Info.plist is generated): `INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait`. Today no orientation keys are set, so it falls back to Xcode's default (portrait plus both landscapes).
 - Decide whether to also allow upside-down portrait (most iPhone apps don't).
 - Open questions: whether the app runs on iPad at all (no `TARGETED_DEVICE_FAMILY` is set), and if so whether iPad stays free to rotate, since iPad apps that support multitasking must support every orientation.
+
+## Condense the watch app
+
+Look over the watch app and decide what should be condensed or left out, instead of mirroring every section of the iPhone app. Today `ClocktowerWatch/SettingsView.swift` repeats nearly the whole iPhone page (Off / On / Schedule with today's schedules, Every, Message, Clock, Time Sensitive, Schedules), so changing anything means a lot of scrolling and small buttons on a small screen.
+
+- Go through each section and decide whether it belongs on the watch: kept as is, condensed (e.g. one row that opens a picker on its own screen, showing the current value), or left to the iPhone. Likely candidates for the iPhone only are the ones set once and rarely changed, such as Message style and Clock format; Off / On / Schedule, Every, and today's schedules are the ones worth reaching from the wrist.
+- Consider splitting the page into a short main screen (on/off state and what's next) with the rest behind a `NavigationLink` or two.
+- Anything left off the watch still syncs from the iPhone through `PhoneSync` / `WatchSync`, so it only needs a footer pointing to the iPhone, as the Schedules section already does.
+- Open questions: whether the watch should still be usable on its own when the iPhone isn't nearby, and how this fits with the complication (see "Widget and complication for schedules" above).
