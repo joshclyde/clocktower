@@ -6,15 +6,15 @@ Notifications at clock-aligned intervals, e.g. every 15 min → 1:00, 1:15, 1:30
 
 | Surface | Behavior |
 | --- | --- |
-| iOS app | Top to bottom: one on/off section with master **Chimes** ON/OFF, **Infinite**, and **Today** (see below), with a description under it: the interval and 3 example times in the chosen clock format (e.g. "Get notifications every 5 minutes." / "Example: 1:00 PM, 1:05 PM, 1:10 PM"; "… during your schedules." when Infinite is off), "No chimes scheduled. Turn on Infinite or a schedule.", or "Chimes are off." · interval buttons **5 / 10 / 15 / 20 / 30 / 60 min** (single select) · message **"1:20 PM"** or **"The time is 1:20 PM"** · clock **12-hour / 24-hour** · **Time Sensitive** toggle · **Schedules** (see below) · Tips |
-| watchOS app | Same controls as iOS, except schedules: each schedule's toggle, but adding and editing schedules is on the iPhone. No Tips |
+| iOS app | Top to bottom: one on/off section with master **Chimes** ON/OFF, **When** (segmented **All Day** / **Scheduled**), and **Today** (see below), with a description under it: the interval and 3 example times in the chosen clock format (e.g. "Get notifications every 5 minutes, all day." / "Example: 1:00 PM, 1:05 PM, 1:10 PM"; "… during your schedules." when Scheduled), "No chimes scheduled. Choose All Day or turn on a schedule.", or "Chimes are off." · interval buttons **5 / 10 / 15 / 20 / 30 / 60 min** (single select) · message **"1:20 PM"** or **"The time is 1:20 PM"** · clock **12-hour / 24-hour** · **Time Sensitive** toggle · **Schedules** (see below) · Tips |
+| watchOS app | Same controls as iOS (When as two buttons, since watchOS has no segmented control), except schedules: each schedule's toggle, but adding and editing schedules is on the iPhone. No Tips |
 | iOS widget | Bell icon and text reflect ON/OFF (display only); tap opens the app |
 | watchOS complication | Bell icon reflects ON/OFF (`bell.fill` / `bell.slash`); tap opens the watch app |
 
-- **Today**: rows under Chimes and Infinite for the active schedules on today's weekday, by start time ("9:00 AM – 5:00 PM" / "Today"), hidden when the master toggle is off. A window that hasn't passed has a toggle that turns that schedule off for the rest of today; once it has passed it shows **Done** (or **Skipped**, if turned off) and no toggle. While Infinite is on, the rows are dimmed and disabled and the footer adds "Infinite is on, so today's schedules aren't used." Otherwise it adds that turning one off lasts until midnight. Refreshes every minute.
+- **Today**: rows under Chimes and When for the active schedules on today's weekday, by start time ("9:00 AM – 5:00 PM" / "Today"), shown only while chimes are on and When is Scheduled. A window that hasn't passed has a toggle that turns that schedule off for the rest of today; once it has passed it shows **Done** (or **Skipped**, if turned off) and no toggle. The footer adds that turning one off lasts until midnight. Refreshes every minute.
 - **Schedules** has one row per schedule ("9:00 AM – 5:00 PM" / "Weekdays") with its own toggle, and **Add Schedule**. Tapping a row opens the editor: start time, end time, and day buttons S M T W T F S (all selected for a new schedule). Either time can be set freely. An end at or before the start turns the End label red with "End time must be after the start time." under it, and no days shows "Select at least one day."; Save (Add) stays disabled until both are fixed. Delete from the editor or by swiping the row.
 - Chimes land on clock boundaries (20 min → :00, :20, :40), not relative to when enabled.
-- Defaults: **ON, Infinite on, 20 min, "1:20 PM", 12-hour, Time Sensitive off, no schedules**.
+- Defaults: **ON, All Day, 20 min, "1:20 PM", 12-hour, Time Sensitive off, no schedules**.
 - Notification permission is requested on first launch. If denied, the app shows a banner linking to Settings.
 - When notifications are allowed, a **Tips** section at the bottom of the iOS settings says so and shows whether Siri announces chimes (Announce Notifications), with a link to Settings when it doesn't.
 - Default notification sound. Interruption level is standard, or Time Sensitive (comes through a Focus) when that toggle is on.
@@ -40,7 +40,7 @@ struct ChimeSchedule: Codable, Equatable, Identifiable {
 
 struct ChimeSettings: Codable, Equatable {
     var isEnabled = true          // master toggle
-    var isInfinite = true         // chime all day, every day; off → follow the schedules
+    var isInfinite = true         // When: All Day (every slot, every day) / Scheduled (false: follow the schedules)
     var interval: ChimeInterval = .m20
     var style: MessageStyle = .timeOnly
     var clock: ClockFormat = .twelveHour
@@ -49,7 +49,7 @@ struct ChimeSettings: Codable, Equatable {
 }
 ```
 
-- Stored as one JSON blob in App Group `UserDefaults` (`group.com.joshclyde.clocktower`), shared by app + widget on each device. Fields missing from older saves take their defaults, so existing users keep Infinite on and chime as before.
+- Stored as one JSON blob in App Group `UserDefaults` (`group.com.joshclyde.clocktower`), shared by app + widget on each device. Fields missing from older saves take their defaults, so existing users stay on All Day and chime as before.
 - `Shared/` holds the model, store, formatter, and widget, compiled into all targets.
 - 12-hour times include AM/PM ("1:20 PM"); 24-hour times don't ("13:20").
 
@@ -58,7 +58,7 @@ struct ChimeSettings: Codable, Equatable {
 ```
 chimes(at date):
   if !isEnabled:  false                              // master off: nothing, whatever else is set
-  if isInfinite:  true                               // every slot, every day; schedules ignored
+  if isInfinite:  true                               // All Day: every slot, every day; schedules ignored
   any schedule where
       schedule.isEnabled                             // "active" schedules
       && date's weekday in schedule.weekdays
@@ -70,7 +70,7 @@ chimes(at date):
 - `end` is always after `start`, and a schedule has at least one day; the editor won't save otherwise. Schedules saved before the end time was required load with 11:59 PM (they ran until midnight), and ones with no days load with every day.
 - Overlapping schedules chime once per slot. Turning one off for today leaves the slots the other covers.
 - Turning a schedule off for today sets `skippedUntil` to the next midnight, so it turns itself back on; turning it back on clears it.
-- Infinite off with no active schedules means no chimes. The master toggle's description says so: "No chimes scheduled. Turn on Infinite or a schedule."
+- Scheduled with no active schedules means no chimes. The master toggle's description says so: "No chimes scheduled. Choose All Day or turn on a schedule."
 
 ## Notification scheduling
 
@@ -93,13 +93,13 @@ reschedule(settings):
 
 | Settings | Requests |
 | --- | --- |
-| Infinite, 30 / 60 min | 48 / 24 daily repeating |
-| Infinite, 5 / 10 / 15 / 20 min | 64 one-shots → ~5 / ~11 / ~16 / ~21 h of coverage |
+| All Day, 30 / 60 min | 48 / 24 daily repeating |
+| All Day, 5 / 10 / 15 / 20 min | 64 one-shots → ~5 / ~11 / ~16 / ~21 h of coverage |
 | Mon–Fri 9 AM–5 PM + Sat–Sun 10 AM–11:59 PM, 30 min | 51 repeating: 15 daily (10 AM–5 PM), 10 weekly (9:00, 9:30 on weekdays), 26 weekly (5:30–11:30 PM on weekends) |
 | Same, 20 min, at Thu 2:10 PM | 64 one-shots: Thu 2:20 PM … Sat 7:40 PM |
 | Same, 30 min, Mon–Fri turned off for today at Thu 2:10 PM | 64 one-shots from Fri 9:00 AM … Sun 7:00 PM; back to 51 repeating at the first refresh after midnight |
 | Same, turned off for today at Thu 6:00 PM | 51 repeating: today's window has passed, so nothing changes |
-| Infinite off, no active schedules | none |
+| Scheduled, no active schedules | none |
 
 - A repeating request can't skip one day, so a schedule turned off for today switches to one-shots until midnight.
 - Content: body = message (e.g. "1:20"); iOS hides notifications with an empty body. The last one-shot chime uses title = message, body = "Open Clocktower to keep chimes going".

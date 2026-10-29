@@ -26,7 +26,8 @@ enum ClockFormat: String, Codable, CaseIterable, Identifiable {
 
 struct ChimeSettings: Codable, Equatable {
     var isEnabled = true
-    /// Chime all day, every day. When off, chimes follow the schedules.
+    /// When to chime, shown as **All Day** (true: every interval, every day) or **Scheduled**
+    /// (false: only during the schedules). Keeps its original name so saved settings still load.
     var isInfinite = true
     var interval: ChimeInterval = .m20
     var style: MessageStyle = .timeOnly

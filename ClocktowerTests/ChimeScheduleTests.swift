@@ -16,7 +16,7 @@ struct ChimeScheduleTests {
 
     let weekdays: Set<Weekday> = [.monday, .tuesday, .wednesday, .thursday, .friday]
 
-    /// Infinite off, with the given schedules.
+    /// Scheduled (`isInfinite` off), with the given schedules.
     func scheduled(_ schedules: ChimeSchedule...) -> ChimeSettings {
         ChimeSettings(isInfinite: false, schedules: schedules)
     }
@@ -120,7 +120,7 @@ struct ChimeScheduleTests {
         #expect(settings.chimes(at: date(9, 30), calendar: calendar))
     }
 
-    @Test func schedulesDecideWhenInfiniteIsOff() {
+    @Test func schedulesDecideWhenScheduled() {
         let settings = scheduled(
             ChimeSchedule(start: TimeOfDay(hour: 9), end: TimeOfDay(hour: 17), weekdays: weekdays),
             ChimeSchedule(start: TimeOfDay(hour: 10), end: .lastMinute, weekdays: [.saturday, .sunday])
@@ -190,7 +190,7 @@ struct ChimeScheduleTests {
         #expect(ChimeText.appDescription(for: ChimeSettings(isInfinite: false, interval: .m15, schedules: [ChimeSchedule()]))
             == "Get notifications every 15 minutes during your schedules.\nExample: 1:00 PM, 1:15 PM, 1:30 PM")
         #expect(ChimeText.appDescription(for: ChimeSettings(isInfinite: false))
-            == "No chimes scheduled. Turn on Infinite or a schedule.")
+            == "No chimes scheduled. Choose All Day or turn on a schedule.")
         #expect(ChimeText.appDescription(for: ChimeSettings(isEnabled: false, isInfinite: false)) == "Chimes are off.")
     }
 }

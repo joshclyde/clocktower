@@ -49,7 +49,7 @@ enum Weekday: Int, Codable, CaseIterable, Identifiable, Comparable {
     static func < (lhs: Self, rhs: Self) -> Bool { lhs.rawValue < rhs.rawValue }
 }
 
-/// A window of the day when chimes fire while Infinite is off. See docs/SPEC.md → Schedules.
+/// A window of the day when chimes fire while When is Scheduled. See docs/SPEC.md → Schedules.
 struct ChimeSchedule: Codable, Equatable, Identifiable {
     var id = UUID()
     var isEnabled = true

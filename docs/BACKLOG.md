@@ -25,7 +25,7 @@ Expose each setting as an action in the Shortcuts app, so chimes can be changed 
 
 Once the schedule settings are settled in the app, decide what the iOS widget and watch complication show. Today they only reflect the master toggle (`bell.fill` / `bell.slash`, "Chimes On" / "Chimes Off").
 
-- States to tell apart: master off; on with Infinite; on with schedules only (inside a window, between windows, nothing left today); today's schedule turned off.
+- States to tell apart: master off; on with All Day; on with Scheduled (inside a window, between windows, nothing left today); today's schedule turned off.
 - Probably show the next chime time or the next window's start when not chiming now, which needs timeline entries at window boundaries and at midnight (when today's schedule toggle resets).
 - Open questions: how much fits in the small widget and the circular complication, and whether tapping should allow turning today's schedule off without opening the app.
 
