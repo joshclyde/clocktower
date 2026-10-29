@@ -51,3 +51,11 @@ Change the stacked-PR workflow in [CLAUDE.md](../CLAUDE.md) so the history isn't
   - **Rebase instead of merge** for review fixes and for bringing in `main`, again with force-pushes on the stack branches.
 - Whatever's chosen, update steps 6–9 of the CLAUDE.md workflow and the repo's allowed merge methods in GitHub settings to match.
 - Open questions: whether per-layer commits are worth keeping on `main`, and whether force-pushing stack branches with open PRs is acceptable (it rewrites what the user may have already reviewed).
+
+## Stop the settings page from jumping
+
+Review `SettingsView` for settings whose change adds or removes UI above the control the user just touched, which shifts the page under their finger. For example, toggling a schedule setting near the bottom of the page can add or remove rows higher up, so the page jumps.
+
+- Go through every control and note what each change shows, hides, or resizes, and where that is relative to the control.
+- Possible fixes: keep conditional UI below the control that drives it; keep rows in place and disable or dim them instead of removing them; or keep the touched control on screen with `ScrollViewReader` / `scrollPosition`. Animating the change (`withAnimation`) makes it smoother but doesn't stop the jump on its own.
+- Check the watch app's settings too.
