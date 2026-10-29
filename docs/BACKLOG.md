@@ -20,3 +20,11 @@ Expose each setting as an action in the Shortcuts app, so chimes can be changed 
 - Each intent applies the change the same way `ChimeController.update` does: save to `SettingsStore`, reschedule via `ChimeScheduler`, and push to the watch with `PhoneSync`. It may run without the app in the foreground, so that path can't depend on SwiftUI state. Reload widget timelines after.
 - Register `AppShortcutsProvider` phrases so the common ones ("Turn off Clocktower chimes") work in Siri and Spotlight without the user building a shortcut.
 - Open questions: whether the watch app gets its own intents, and how to reach the watch when the change happens while the iPhone app isn't running.
+
+## Widget and complication for schedules
+
+Once the schedule settings are settled in the app, decide what the iOS widget and watch complication show. Today they only reflect the master toggle (`bell.fill` / `bell.slash`, "Chimes On" / "Chimes Off").
+
+- States to tell apart: master off; on with Infinite; on with schedules only (inside a window, between windows, nothing left today); today's schedule turned off.
+- Probably show the next chime time or the next window's start when not chiming now, which needs timeline entries at window boundaries and at midnight (when today's schedule toggle resets).
+- Open questions: how much fits in the small widget and the circular complication, and whether tapping should allow turning today's schedule off without opening the app.
