@@ -110,20 +110,20 @@ struct SettingsView: View {
         }
     }
 
-    /// The on/off controls, together at the top: the master toggle, Infinite, and today's schedules
-    /// (shown while chimes are on; dimmed while Infinite is on).
+    /// The top section: Off / On / Schedule, and today's schedules while set to Schedule.
     private func onOffSection(now: Date) -> some View {
-        let today = settings.isEnabled ? settings.todaysSchedules(at: now, calendar: .current) : []
+        let today = settings.mode == .schedule ? settings.todaysSchedules(at: now, calendar: .current) : []
         var footer = ChimeText.appDescription(for: settings)
         if !today.isEmpty {
-            footer += settings.isInfinite ? "\n\nInfinite is on, so today's schedules aren't used." : "\n\nTurning off one of today's schedules lasts until midnight."
+            footer += "\n\nTurning off one of today's schedules lasts until midnight."
         }
         return Section {
-            Toggle(isOn: controller.binding(\.isEnabled)) {
-                Label("Chimes", systemImage: settings.isEnabled ? "bell.fill" : "bell.slash")
-            }
-            Toggle(isOn: controller.binding(\.isInfinite)) {
-                Label("Infinite", systemImage: "infinity")
+            HStack {
+                ForEach(ChimeMode.allCases) { mode in
+                    ChoiceButton(title: mode.label, isSelected: settings.mode == mode, color: mode.color) {
+                        controller.update { $0.mode = mode }
+                    }
+                }
             }
             ForEach(today) { schedule in
                 TodayRow(schedule: schedule, clock: settings.clock, now: now) { skip in
@@ -131,8 +131,9 @@ struct SettingsView: View {
                         settings.updateSchedule(schedule.id) { $0.skipToday(skip, at: .now, calendar: .current) }
                     }
                 }
-                .disabled(settings.isInfinite)
             }
+        } header: {
+            Text("Chimes")
         } footer: {
             Text(footer)
         }
@@ -158,9 +159,9 @@ struct SettingsView: View {
         } header: {
             Text("Schedules")
         } footer: {
-            Text(settings.isInfinite
-                ? "Infinite is on, so schedules aren't used. Turn it off to chime only during your schedules."
-                : "Chimes only during these windows.")
+            Text(settings.mode == .schedule
+                ? "Chimes only during these windows."
+                : "Choose Schedule above to chime only during these windows.")
         }
     }
 }

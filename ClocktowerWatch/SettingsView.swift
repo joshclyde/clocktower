@@ -62,49 +62,51 @@ struct SettingsView: View {
         }
     }
 
-    /// The on/off controls, together at the top: the master toggle, Infinite, and today's schedules
-    /// (shown while chimes are on; dimmed while Infinite is on).
+    /// The top section: Off / On / Schedule, and today's schedules while set to Schedule.
     private func onOffSection(now: Date) -> some View {
-        let today = settings.isEnabled ? settings.todaysSchedules(at: now, calendar: .current) : []
+        let today = settings.mode == .schedule ? settings.todaysSchedules(at: now, calendar: .current) : []
         var footer = ChimeText.appDescription(for: settings)
         if !today.isEmpty {
-            footer += settings.isInfinite ? "\n\nInfinite is on, so today's schedules aren't used." : "\n\nTurning one off lasts until midnight."
+            footer += "\n\nTurning one off lasts until midnight."
         }
         return Section {
-            Toggle(isOn: controller.binding(\.isEnabled)) {
-                Label("Chimes", systemImage: settings.isEnabled ? "bell.fill" : "bell.slash")
+            HStack {
+                ForEach(ChimeMode.allCases) { mode in
+                    ChoiceButton(title: mode.label, isSelected: settings.mode == mode, color: mode.color) {
+                        controller.update { $0.mode = mode }
+                    }
+                }
             }
-            Toggle("Infinite", isOn: controller.binding(\.isInfinite))
+            .listRowBackground(Color.clear)
             ForEach(today) { schedule in
                 let window = ChimeText.window(of: schedule, clock: settings.clock)
-                Group {
-                    if schedule.hasEnded(at: now, calendar: .current) {
+                if schedule.hasEnded(at: now, calendar: .current) {
+                    VStack(alignment: .leading) {
+                        Text(window)
+                        Text(schedule.isSkipped(at: now) ? "Today · Skipped" : "Today · Done")
+                            .font(.footnote)
+                    }
+                    .foregroundStyle(.secondary)
+                } else {
+                    Toggle(isOn: Binding(
+                        get: { !schedule.isSkipped(at: now) },
+                        set: { isOn in
+                            controller.update { settings in
+                                settings.updateSchedule(schedule.id) { $0.skipToday(!isOn, at: .now, calendar: .current) }
+                            }
+                        }
+                    )) {
                         VStack(alignment: .leading) {
                             Text(window)
-                            Text(schedule.isSkipped(at: now) ? "Today · Skipped" : "Today · Done")
+                            Text("Today")
                                 .font(.footnote)
-                        }
-                        .foregroundStyle(.secondary)
-                    } else {
-                        Toggle(isOn: Binding(
-                            get: { !schedule.isSkipped(at: now) },
-                            set: { isOn in
-                                controller.update { settings in
-                                    settings.updateSchedule(schedule.id) { $0.skipToday(!isOn, at: .now, calendar: .current) }
-                                }
-                            }
-                        )) {
-                            VStack(alignment: .leading) {
-                                Text(window)
-                                Text("Today")
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
-                            }
+                                .foregroundStyle(.secondary)
                         }
                     }
                 }
-                .disabled(settings.isInfinite)
             }
+        } header: {
+            Text("Chimes")
         } footer: {
             Text(footer)
         }
@@ -129,9 +131,9 @@ struct SettingsView: View {
         } header: {
             Text("Schedules")
         } footer: {
-            Text(settings.isInfinite
-                ? "Infinite is on, so schedules aren't used. Add and edit schedules on your iPhone."
-                : "Add and edit schedules on your iPhone.")
+            Text(settings.mode == .schedule
+                ? "Add and edit schedules on your iPhone."
+                : "Choose Schedule to use these. Add and edit schedules on your iPhone.")
         }
     }
 }

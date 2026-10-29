@@ -35,11 +35,11 @@ enum ChimeText {
     static func appDescription(for settings: ChimeSettings) -> String {
         guard settings.isEnabled else { return "Chimes are off." }
         guard settings.isInfinite || !settings.activeSchedules.isEmpty else {
-            return "No chimes scheduled. Turn on Infinite or a schedule."
+            return "No chimes scheduled. Choose On or turn on a schedule."
         }
         let minutes = settings.interval.minutes
         let every = minutes == 60 ? "every hour" : "every \(minutes) minutes"
-        let during = settings.isInfinite ? "" : " during your schedules"
+        let during = settings.isInfinite ? ", all day" : " during your schedules"
         let example = (0..<3).map { index in
             let minuteOfDay = 13 * 60 + index * minutes
             return time(hour: minuteOfDay / 60, minute: minuteOfDay % 60, clock: settings.clock)
