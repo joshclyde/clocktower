@@ -111,10 +111,9 @@ struct SettingsView: View {
         }
     }
 
-    /// Schedules can be turned on and off here; adding and editing them is on the iPhone.
+    /// Each schedule can be turned on and off here; adding and editing them is on the iPhone.
     private var schedulesSection: some View {
         Section {
-            Toggle("Schedules", isOn: controller.binding(\.isScheduleEnabled))
             ForEach(settings.schedules) { schedule in
                 Toggle(isOn: Binding(
                     get: { schedule.isEnabled },

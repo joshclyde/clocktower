@@ -33,8 +33,6 @@ struct ChimeSettings: Codable, Equatable {
     var clock: ClockFormat = .twelveHour
     /// Deliver chimes as Time Sensitive so they come through a Focus.
     var isTimeSensitive = false
-    /// Turns all schedules on or off. Only used while Infinite is off.
-    var isScheduleEnabled = true
     var schedules: [ChimeSchedule] = []
 }
 
@@ -49,7 +47,6 @@ extension ChimeSettings {
         style = try container.decodeIfPresent(MessageStyle.self, forKey: .style) ?? defaults.style
         clock = try container.decodeIfPresent(ClockFormat.self, forKey: .clock) ?? defaults.clock
         isTimeSensitive = try container.decodeIfPresent(Bool.self, forKey: .isTimeSensitive) ?? defaults.isTimeSensitive
-        isScheduleEnabled = try container.decodeIfPresent(Bool.self, forKey: .isScheduleEnabled) ?? defaults.isScheduleEnabled
         schedules = try container.decodeIfPresent([ChimeSchedule].self, forKey: .schedules) ?? defaults.schedules
     }
 }

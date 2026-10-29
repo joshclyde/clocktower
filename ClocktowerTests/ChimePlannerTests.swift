@@ -169,7 +169,9 @@ struct ChimePlannerTests {
 
     @Test func noActiveSchedulesSchedulesNothing() {
         var settings = weekdaysAndWeekends(.m20)
-        settings.isScheduleEnabled = false
+        for index in settings.schedules.indices {
+            settings.schedules[index].isEnabled = false
+        }
         #expect(requests(settings, now: date(day: 15, 14, 10)).isEmpty)
         #expect(requests(ChimeSettings(isInfinite: false), now: date(day: 15, 14, 10)).isEmpty)
     }

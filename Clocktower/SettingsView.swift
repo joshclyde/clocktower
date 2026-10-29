@@ -166,9 +166,6 @@ struct SettingsView: View {
 
     private var schedulesSection: some View {
         Section {
-            Toggle(isOn: controller.binding(\.isScheduleEnabled)) {
-                Label("Schedules", systemImage: "calendar")
-            }
             ForEach(settings.schedules) { schedule in
                 ScheduleRow(schedule: schedule, clock: settings.clock) {
                     editing = schedule
