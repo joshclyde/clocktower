@@ -26,11 +26,16 @@ enum ClockFormat: String, Codable, CaseIterable, Identifiable {
 
 struct ChimeSettings: Codable, Equatable {
     var isEnabled = true
+    /// Chime all day, every day. When off, chimes follow the schedules.
+    var isInfinite = true
     var interval: ChimeInterval = .m20
     var style: MessageStyle = .timeOnly
     var clock: ClockFormat = .twelveHour
     /// Deliver chimes as Time Sensitive so they come through a Focus.
     var isTimeSensitive = false
+    /// Turns all schedules on or off. Only used while Infinite is off.
+    var isScheduleEnabled = true
+    var schedules: [ChimeSchedule] = []
 }
 
 extension ChimeSettings {
@@ -39,10 +44,13 @@ extension ChimeSettings {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let defaults = ChimeSettings()
         isEnabled = try container.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? defaults.isEnabled
+        isInfinite = try container.decodeIfPresent(Bool.self, forKey: .isInfinite) ?? defaults.isInfinite
         interval = try container.decodeIfPresent(ChimeInterval.self, forKey: .interval) ?? defaults.interval
         style = try container.decodeIfPresent(MessageStyle.self, forKey: .style) ?? defaults.style
         clock = try container.decodeIfPresent(ClockFormat.self, forKey: .clock) ?? defaults.clock
         isTimeSensitive = try container.decodeIfPresent(Bool.self, forKey: .isTimeSensitive) ?? defaults.isTimeSensitive
+        isScheduleEnabled = try container.decodeIfPresent(Bool.self, forKey: .isScheduleEnabled) ?? defaults.isScheduleEnabled
+        schedules = try container.decodeIfPresent([ChimeSchedule].self, forKey: .schedules) ?? defaults.schedules
     }
 }
 
