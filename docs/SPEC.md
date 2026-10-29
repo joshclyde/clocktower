@@ -12,7 +12,7 @@ Notifications at clock-aligned intervals, e.g. every 15 min → 1:00, 1:15, 1:30
 | watchOS complication | Bell icon reflects ON/OFF (`bell.fill` / `bell.slash`); tap opens the watch app |
 
 - **Today** lists the active schedules for today's weekday by start time, hidden when the master toggle is off or there are none. Each window that hasn't passed has a toggle that turns that schedule off for the rest of today. Once a window has passed it shows **Done** (or **Skipped**, if turned off) and no toggle. While Infinite is on, the section is dimmed and disabled with the note "Infinite is on, so schedules aren't used." The section refreshes every minute.
-- **Schedules** has one row per schedule ("9:00 AM – 5:00 PM" / "Weekdays") with its own toggle, and **Add Schedule**. Tapping a row opens the editor: start time, end time, and day buttons S M T W T F S (all selected for a new schedule). Delete from the editor or by swiping the row.
+- **Schedules** has one row per schedule ("9:00 AM – 5:00 PM" / "Weekdays") with its own toggle, and **Add Schedule**. Tapping a row opens the editor: start time, end time, and day buttons S M T W T F S (all selected for a new schedule). Either time can be set freely. An end at or before the start turns the End label red with "End time must be after the start time." under it, and no days shows "Select at least one day."; Save (Add) stays disabled until both are fixed. Delete from the editor or by swiping the row.
 - Chimes land on clock boundaries (20 min → :00, :20, :40), not relative to when enabled.
 - Defaults: **ON, Infinite on, 20 min, "1:20 PM", 12-hour, Time Sensitive off, no schedules**.
 - Notification permission is requested on first launch. If denied, the app shows a banner linking to Settings.

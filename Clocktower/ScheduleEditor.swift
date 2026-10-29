@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Adds or edits one schedule: start time, optional end time, and days.
+/// Adds or edits one schedule: start and end times, and days. Saves only a valid schedule.
 struct ScheduleEditor: View {
     @Environment(\.dismiss) private var dismiss
     @State private var schedule: ChimeSchedule
@@ -19,10 +19,16 @@ struct ScheduleEditor: View {
         NavigationStack {
             Form {
                 Section {
-                    DatePicker("Start", selection: startBinding, displayedComponents: .hourAndMinute)
-                    DatePicker("End", selection: endBinding, in: endRange, displayedComponents: .hourAndMinute)
+                    DatePicker("Start", selection: timeBinding(\.start), displayedComponents: .hourAndMinute)
+                    DatePicker(selection: timeBinding(\.end), displayedComponents: .hourAndMinute) {
+                        Text("End").foregroundStyle(schedule.endsAfterStart ? Color.primary : Color.red)
+                    }
                 } footer: {
-                    Text("Chimes at the end time too.")
+                    if schedule.endsAfterStart {
+                        Text("Chimes at the end time too.")
+                    } else {
+                        ValidationMessage("End time must be after the start time.")
+                    }
                 }
 
                 Section {
@@ -41,7 +47,11 @@ struct ScheduleEditor: View {
                 } header: {
                     Text("Days")
                 } footer: {
-                    Text(ChimeText.days(schedule.weekdays))
+                    if schedule.weekdays.isEmpty {
+                        ValidationMessage("Select at least one day.")
+                    } else {
+                        Text(ChimeText.days(schedule.weekdays))
+                    }
                 }
 
                 if !isNew {
@@ -64,6 +74,7 @@ struct ScheduleEditor: View {
                         onSave(schedule)
                         dismiss()
                     }
+                    .disabled(!schedule.isValid)
                 }
             }
         }
@@ -71,32 +82,12 @@ struct ScheduleEditor: View {
 
     // MARK: Times
 
-    /// Moving the start to or past the end pushes the end an hour after it (up to 11:59 PM),
-    /// so the end stays after the start.
-    private var startBinding: Binding<Date> {
+    /// Either time can be set freely; an end at or before the start shows an error and blocks saving.
+    private func timeBinding(_ keyPath: WritableKeyPath<ChimeSchedule, TimeOfDay>) -> Binding<Date> {
         Binding(
-            get: { date(for: schedule.start) },
-            set: { date in
-                let start = TimeOfDay(of: date, calendar: .current)
-                schedule.start = start
-                if schedule.end <= start {
-                    schedule.end = TimeOfDay(minuteOfDay: min(start.minuteOfDay + 60, TimeOfDay.lastMinute.minuteOfDay))
-                }
-            }
+            get: { date(for: schedule[keyPath: keyPath]) },
+            set: { date in schedule[keyPath: keyPath] = TimeOfDay(of: date, calendar: .current) }
         )
-    }
-
-    private var endBinding: Binding<Date> {
-        Binding(
-            get: { date(for: schedule.end) },
-            set: { date in schedule.end = TimeOfDay(of: date, calendar: .current) }
-        )
-    }
-
-    /// Only times after the start.
-    private var endRange: ClosedRange<Date> {
-        let earliest = TimeOfDay(minuteOfDay: min(schedule.start.minuteOfDay + 1, TimeOfDay.lastMinute.minuteOfDay))
-        return date(for: earliest)...date(for: .lastMinute)
     }
 
     /// DatePicker works in dates; a fixed day with no daylight saving change stands in for any day.
@@ -104,6 +95,20 @@ struct ScheduleEditor: View {
 
     private func date(for time: TimeOfDay) -> Date {
         Calendar.current.date(bySettingHour: time.hour, minute: time.minute, second: 0, of: Self.referenceDay)!
+    }
+}
+
+/// An inline form error under the field it's about: red, with an icon.
+private struct ValidationMessage: View {
+    let text: String
+
+    init(_ text: String) {
+        self.text = text
+    }
+
+    var body: some View {
+        Label(text, systemImage: "exclamationmark.circle.fill")
+            .foregroundStyle(.red)
     }
 }
 
