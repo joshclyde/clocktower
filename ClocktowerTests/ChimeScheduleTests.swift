@@ -26,7 +26,6 @@ struct ChimeScheduleTests {
     @Test func defaults() {
         let settings = ChimeSettings()
         #expect(settings.isInfinite)
-        #expect(settings.isScheduleEnabled)
         #expect(settings.schedules.isEmpty)
     }
 
@@ -39,7 +38,7 @@ struct ChimeScheduleTests {
     @Test func schedulesRoundTrip() throws {
         var schedule = ChimeSchedule(start: TimeOfDay(hour: 10), end: nil, weekdays: [.saturday, .sunday])
         schedule.skipToday(true, at: date(14), calendar: calendar)
-        let settings = ChimeSettings(isInfinite: false, isScheduleEnabled: false, schedules: [schedule, ChimeSchedule(isEnabled: false)])
+        let settings = ChimeSettings(isInfinite: false, schedules: [schedule, ChimeSchedule(isEnabled: false)])
 
         let decoded = try JSONDecoder().decode(ChimeSettings.self, from: JSONEncoder().encode(settings))
         #expect(decoded == settings)
@@ -126,10 +125,8 @@ struct ChimeScheduleTests {
 
     @Test func noActiveSchedulesNeverChimes() {
         #expect(!scheduled().chimes(at: date(10), calendar: calendar))
-        #expect(!scheduled(ChimeSchedule(isEnabled: false)).chimes(at: date(10), calendar: calendar))
 
-        var settings = scheduled(ChimeSchedule())
-        settings.isScheduleEnabled = false
+        let settings = scheduled(ChimeSchedule(isEnabled: false))
         #expect(!settings.chimes(at: date(10), calendar: calendar))
         #expect(settings.activeSchedules.isEmpty)
     }
@@ -159,12 +156,9 @@ struct ChimeScheduleTests {
         let morning = ChimeSchedule(start: TimeOfDay(hour: 9), end: TimeOfDay(hour: 12))
         let weekend = ChimeSchedule(weekdays: [.saturday, .sunday])
         let off = ChimeSchedule(isEnabled: false)
-        var settings = scheduled(afternoon, weekend, morning, off)
+        let settings = scheduled(afternoon, weekend, morning, off)
 
         #expect(settings.todaysSchedules(at: date(10), calendar: calendar) == [morning, afternoon])
-
-        settings.isScheduleEnabled = false
-        #expect(settings.todaysSchedules(at: date(10), calendar: calendar).isEmpty)
     }
 
     // MARK: Text

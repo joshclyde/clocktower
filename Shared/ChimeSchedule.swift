@@ -91,9 +91,9 @@ extension ChimeSchedule {
 // MARK: - Which chimes fire
 
 extension ChimeSettings {
-    /// Schedules that can chime: both the Schedules toggle and the schedule's own toggle are on.
+    /// Schedules that can chime: their own toggle is on.
     var activeSchedules: [ChimeSchedule] {
-        isScheduleEnabled ? schedules.filter(\.isEnabled) : []
+        schedules.filter(\.isEnabled)
     }
 
     /// Whether a chime at `date` fires. See docs/SPEC.md → Which chimes fire.

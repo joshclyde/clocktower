@@ -7,14 +7,14 @@ Notifications at clock-aligned intervals, e.g. every 15 min → 1:00, 1:15, 1:30
 | Surface | Behavior |
 | --- | --- |
 | iOS app | Top to bottom: master **Chimes** ON/OFF, with a description under it: the interval and 3 example times in the chosen clock format (e.g. "Get notifications every 5 minutes." / "Example: 1:00 PM, 1:05 PM, 1:10 PM"; "… during your schedules." when Infinite is off), "No chimes scheduled. Turn on Infinite or a schedule.", or "Chimes are off." · **Infinite** toggle · **Today** (see below) · interval buttons **5 / 10 / 15 / 20 / 30 / 60 min** (single select) · message **"1:20 PM"** or **"The time is 1:20 PM"** · clock **12-hour / 24-hour** · **Time Sensitive** toggle · **Schedules** (see below) · Tips |
-| watchOS app | Same controls as iOS, except schedules: the Schedules toggle and each schedule's toggle, but adding and editing schedules is on the iPhone. No Tips |
+| watchOS app | Same controls as iOS, except schedules: each schedule's toggle, but adding and editing schedules is on the iPhone. No Tips |
 | iOS widget | Bell icon and text reflect ON/OFF (display only); tap opens the app |
 | watchOS complication | Bell icon reflects ON/OFF (`bell.fill` / `bell.slash`); tap opens the watch app |
 
 - **Today** lists the active schedules for today's weekday by start time, hidden when the master toggle is off or there are none. Each window that hasn't passed has a toggle that turns that schedule off for the rest of today. Once a window has passed it shows **Done** (or **Skipped**, if turned off) and no toggle. While Infinite is on, the section is dimmed and disabled with the note "Infinite is on, so schedules aren't used." The section refreshes every minute.
-- **Schedules** has the Schedules toggle (all schedules on/off), one row per schedule ("9:00 AM – 5:00 PM" / "Weekdays") with its own toggle, and **Add Schedule**. Tapping a row opens the editor: start time, **End Time** toggle and end time (only times after the start; off = until midnight), and day buttons S M T W T F S (none = every day). Delete from the editor or by swiping the row.
+- **Schedules** has one row per schedule ("9:00 AM – 5:00 PM" / "Weekdays") with its own toggle, and **Add Schedule**. Tapping a row opens the editor: start time, **End Time** toggle and end time (only times after the start; off = until midnight), and day buttons S M T W T F S (none = every day). Delete from the editor or by swiping the row.
 - Chimes land on clock boundaries (20 min → :00, :20, :40), not relative to when enabled.
-- Defaults: **ON, Infinite on, 20 min, "1:20 PM", 12-hour, Time Sensitive off, Schedules on with none added**.
+- Defaults: **ON, Infinite on, 20 min, "1:20 PM", 12-hour, Time Sensitive off, no schedules**.
 - Notification permission is requested on first launch. If denied, the app shows a banner linking to Settings.
 - When notifications are allowed, a **Tips** section at the bottom of the iOS settings says so and shows whether Siri announces chimes (Announce Notifications), with a link to Settings when it doesn't.
 - Default notification sound. Interruption level is standard, or Time Sensitive (comes through a Focus) when that toggle is on.
@@ -45,7 +45,6 @@ struct ChimeSettings: Codable, Equatable {
     var style: MessageStyle = .timeOnly
     var clock: ClockFormat = .twelveHour
     var isTimeSensitive = false
-    var isScheduleEnabled = true  // turns all schedules on or off
     var schedules: [ChimeSchedule] = []
 }
 ```
@@ -61,7 +60,7 @@ chimes(at date):
   if !isEnabled:  false                              // master off: nothing, whatever else is set
   if isInfinite:  true                               // every slot, every day; schedules ignored
   any schedule where
-      isScheduleEnabled && schedule.isEnabled        // "active" schedules
+      schedule.isEnabled                             // "active" schedules
       && schedule applies to date's weekday          // no days selected = every day
       && start <= time <= (end ?? 11:59 PM)          // an explicit end time fires; midnight belongs to the next day
       && !(date < schedule.skippedUntil)             // not turned off for today
