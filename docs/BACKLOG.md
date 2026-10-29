@@ -40,3 +40,11 @@ Let the user see every notification Clocktower has asked iOS to deliver, and why
   - **Over the 64 limit** (5, 10, 15, 20 min): only the next 64 are scheduled, ending at a given time. Chimes stop then unless the app is opened (or background refresh tops them up), and the last one reminds the user to open it.
 - Empty state when chimes are off or notifications aren't allowed.
 - Open questions: whether the watch app gets the same view for its own pending notifications, and whether to group the list by day.
+
+## Stop the settings page from jumping
+
+Review `SettingsView` for settings whose change adds or removes UI above the control the user just touched, which shifts the page under their finger. For example, toggling a schedule setting near the bottom of the page can add or remove rows higher up, so the page jumps.
+
+- Go through every control and note what each change shows, hides, or resizes, and where that is relative to the control.
+- Possible fixes: keep conditional UI below the control that drives it; keep rows in place and disable or dim them instead of removing them; or keep the touched control on screen with `ScrollViewReader` / `scrollPosition`. Animating the change (`withAnimation`) makes it smoother but doesn't stop the jump on its own.
+- Check the watch app's settings too.
