@@ -95,6 +95,11 @@ extension ChimeSchedule {
         TimeOfDay(of: date, calendar: calendar) > end
     }
 
+    var endsAfterStart: Bool { end > start }
+
+    /// Whether the editor can save it: the end is after the start, and at least one day is selected.
+    var isValid: Bool { endsAfterStart && !weekdays.isEmpty }
+
     /// Turns the schedule off for the rest of `date`'s day, or back on.
     mutating func skipToday(_ skip: Bool, at date: Date, calendar: Calendar) {
         skippedUntil = skip ? calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: date)) : nil

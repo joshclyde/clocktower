@@ -81,6 +81,14 @@ struct ChimeScheduleTests {
         #expect(schedule.hasEnded(at: date(17, 1), calendar: calendar))
     }
 
+    @Test func validSchedulesEndAfterTheStartAndHaveADay() {
+        #expect(ChimeSchedule().isValid)
+        #expect(ChimeSchedule(start: TimeOfDay(hour: 9), end: TimeOfDay(hour: 9, minute: 1)).isValid)
+        #expect(!ChimeSchedule(start: TimeOfDay(hour: 9), end: TimeOfDay(hour: 9)).isValid)
+        #expect(!ChimeSchedule(start: TimeOfDay(hour: 17), end: TimeOfDay(hour: 9)).endsAfterStart)
+        #expect(!ChimeSchedule(weekdays: []).isValid)
+    }
+
     @Test func skippingTodayLastsUntilMidnight() {
         var schedule = ChimeSchedule()
         schedule.skipToday(true, at: date(14, 10), calendar: calendar)
