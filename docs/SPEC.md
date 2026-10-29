@@ -7,7 +7,7 @@ Notifications at clock-aligned intervals, e.g. every 15 min → 1:00, 1:15, 1:30
 | Surface | Behavior |
 | --- | --- |
 | iOS app | Top to bottom: master **Chimes** ON/OFF, with a description under it: the interval and 3 example times in the chosen clock format (e.g. "Get notifications every 5 minutes." / "Example: 1:00 PM, 1:05 PM, 1:10 PM"; "… during your schedules." when Infinite is off), "No chimes scheduled. Turn on Infinite or a schedule.", or "Chimes are off." · **Infinite** toggle · **Today** (see below) · interval buttons **5 / 10 / 15 / 20 / 30 / 60 min** (single select) · message **"1:20 PM"** or **"The time is 1:20 PM"** · clock **12-hour / 24-hour** · **Time Sensitive** toggle · **Schedules** (see below) · Tips |
-| watchOS app | Same controls as iOS |
+| watchOS app | Same controls as iOS, except schedules: the Schedules toggle and each schedule's toggle, but adding and editing schedules is on the iPhone. No Tips |
 | iOS widget | Bell icon and text reflect ON/OFF (display only); tap opens the app |
 | watchOS complication | Bell icon reflects ON/OFF (`bell.fill` / `bell.slash`); tap opens the watch app |
 
