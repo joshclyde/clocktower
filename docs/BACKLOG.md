@@ -65,3 +65,13 @@ Look over the watch app and decide what should be condensed or left out, instead
 - Consider splitting the page into a short main screen (on/off state and what's next) with the rest behind a `NavigationLink` or two.
 - Anything left off the watch still syncs from the iPhone through `PhoneSync` / `WatchSync`, so it only needs a footer pointing to the iPhone, as the Schedules section already does.
 - Open questions: whether the watch should still be usable on its own when the iPhone isn't nearby, and how this fits with the complication (see "Widget and complication for schedules" above).
+
+## App icon variants and choices
+
+Think more about the app icon: get the light and dark versions right, and offer a few extra icons the user can switch between.
+
+- Light / dark: the iPhone icon already has dark and tinted variants (`Clocktower/Assets.xcassets/AppIcon.appiconset`, sources in `docs/icon/`), but they haven't had much design thought. Review how each looks on the home screen in light, dark, and tinted mode. The watch icon is a single image; watchOS has no dark or tinted icons.
+- Extra icons: add a few alternate `.appiconset`s (each with its own dark and tinted variants) and list them in `project.yml` with `ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES` (plus `ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS: YES`). Switch with `UIApplication.shared.setAlternateIconName(_:)`; iOS shows its own "You have changed the icon" alert, which can't be suppressed.
+- An "App Icon" row in `SettingsView` opening a picker that previews each option and marks the current one (`UIApplication.shared.alternateIconName`). Store a separate preview image per icon, since an app icon can't be loaded as a `UIImage` by name.
+- watchOS doesn't support alternate icons, so the watch keeps one icon.
+- Open questions: which designs to offer, whether the widget's look should follow the chosen icon, and whether the dark variant should be a true dark design or just the light one on a dark background.
