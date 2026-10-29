@@ -72,7 +72,7 @@ struct SettingsView: View {
         return Section {
             HStack {
                 ForEach(ChimeMode.allCases) { mode in
-                    ChoiceButton(title: mode.label, isSelected: settings.mode == mode) {
+                    ChoiceButton(title: mode.label, isSelected: settings.mode == mode, color: mode.color) {
                         controller.update { $0.mode = mode }
                     }
                 }

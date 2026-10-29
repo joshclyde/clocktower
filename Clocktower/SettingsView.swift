@@ -118,12 +118,13 @@ struct SettingsView: View {
             footer += "\n\nTurning off one of today's schedules lasts until midnight."
         }
         return Section {
-            Picker("Chimes", selection: controller.binding(\.mode)) {
+            HStack {
                 ForEach(ChimeMode.allCases) { mode in
-                    Text(mode.label).tag(mode)
+                    ChoiceButton(title: mode.label, isSelected: settings.mode == mode, color: mode.color) {
+                        controller.update { $0.mode = mode }
+                    }
                 }
             }
-            .pickerStyle(.segmented)
             ForEach(today) { schedule in
                 TodayRow(schedule: schedule, clock: settings.clock, now: now) { skip in
                     controller.update { settings in

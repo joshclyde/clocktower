@@ -1,9 +1,11 @@
 import SwiftUI
 
-/// A selectable button used for the interval and message options in both apps.
+/// A selectable button used for the Chimes, interval and message options in both apps.
 struct ChoiceButton: View {
     let title: String
     let isSelected: Bool
+    /// The fill while selected.
+    var color: Color = .accentColor
     let action: () -> Void
 
     var body: some View {
@@ -14,10 +16,11 @@ struct ChoiceButton: View {
                 .minimumScaleFactor(0.7)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
-                .background(isSelected ? Color.accentColor : Color.secondary.opacity(0.2), in: RoundedRectangle(cornerRadius: 10))
+                .background(isSelected ? color : Color.secondary.opacity(0.2), in: RoundedRectangle(cornerRadius: 10))
                 .foregroundStyle(isSelected ? Color.white : Color.primary)
         }
         // Plain style keeps several buttons in one List row independently tappable.
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
