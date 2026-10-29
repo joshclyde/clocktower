@@ -110,22 +110,18 @@ struct SettingsView: View {
         }
     }
 
-    /// The on/off controls, together at the top: the master toggle, When (All Day or Scheduled),
-    /// and today's schedules while chimes are on and Scheduled.
+    /// The top section: Off / On / Schedule, and today's schedules while set to Schedule.
     private func onOffSection(now: Date) -> some View {
-        let showsToday = settings.isEnabled && !settings.isInfinite
-        let today = showsToday ? settings.todaysSchedules(at: now, calendar: .current) : []
+        let today = settings.mode == .schedule ? settings.todaysSchedules(at: now, calendar: .current) : []
         var footer = ChimeText.appDescription(for: settings)
         if !today.isEmpty {
             footer += "\n\nTurning off one of today's schedules lasts until midnight."
         }
         return Section {
-            Toggle(isOn: controller.binding(\.isEnabled)) {
-                Label("Chimes", systemImage: settings.isEnabled ? "bell.fill" : "bell.slash")
-            }
-            Picker("When", selection: controller.binding(\.isInfinite)) {
-                Text("All Day").tag(true)
-                Text("Scheduled").tag(false)
+            Picker("Chimes", selection: controller.binding(\.mode)) {
+                ForEach(ChimeMode.allCases) { mode in
+                    Text(mode.label).tag(mode)
+                }
             }
             .pickerStyle(.segmented)
             ForEach(today) { schedule in
@@ -135,6 +131,8 @@ struct SettingsView: View {
                     }
                 }
             }
+        } header: {
+            Text("Chimes")
         } footer: {
             Text(footer)
         }
@@ -160,9 +158,9 @@ struct SettingsView: View {
         } header: {
             Text("Schedules")
         } footer: {
-            Text(settings.isInfinite
-                ? "All Day is selected, so schedules aren't used. Choose Scheduled to chime only during them."
-                : "Chimes only during these windows.")
+            Text(settings.mode == .schedule
+                ? "Chimes only during these windows."
+                : "Choose Schedule above to chime only during these windows.")
         }
     }
 }

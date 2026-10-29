@@ -62,25 +62,19 @@ struct SettingsView: View {
         }
     }
 
-    /// The on/off controls, together at the top: the master toggle, When (All Day or Scheduled),
-    /// and today's schedules while chimes are on and Scheduled.
+    /// The top section: Off / On / Schedule, and today's schedules while set to Schedule.
     private func onOffSection(now: Date) -> some View {
-        let showsToday = settings.isEnabled && !settings.isInfinite
-        let today = showsToday ? settings.todaysSchedules(at: now, calendar: .current) : []
+        let today = settings.mode == .schedule ? settings.todaysSchedules(at: now, calendar: .current) : []
         var footer = ChimeText.appDescription(for: settings)
         if !today.isEmpty {
             footer += "\n\nTurning one off lasts until midnight."
         }
         return Section {
-            Toggle(isOn: controller.binding(\.isEnabled)) {
-                Label("Chimes", systemImage: settings.isEnabled ? "bell.fill" : "bell.slash")
-            }
             HStack {
-                ChoiceButton(title: "All Day", isSelected: settings.isInfinite) {
-                    controller.update { $0.isInfinite = true }
-                }
-                ChoiceButton(title: "Scheduled", isSelected: !settings.isInfinite) {
-                    controller.update { $0.isInfinite = false }
+                ForEach(ChimeMode.allCases) { mode in
+                    ChoiceButton(title: mode.label, isSelected: settings.mode == mode) {
+                        controller.update { $0.mode = mode }
+                    }
                 }
             }
             .listRowBackground(Color.clear)
@@ -111,6 +105,8 @@ struct SettingsView: View {
                     }
                 }
             }
+        } header: {
+            Text("Chimes")
         } footer: {
             Text(footer)
         }
@@ -135,9 +131,9 @@ struct SettingsView: View {
         } header: {
             Text("Schedules")
         } footer: {
-            Text(settings.isInfinite
-                ? "All Day is selected, so schedules aren't used. Add and edit schedules on your iPhone."
-                : "Add and edit schedules on your iPhone.")
+            Text(settings.mode == .schedule
+                ? "Add and edit schedules on your iPhone."
+                : "Choose Schedule to use these. Add and edit schedules on your iPhone.")
         }
     }
 }
