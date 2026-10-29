@@ -81,4 +81,101 @@ struct ChimePlannerTests {
         let slots = ChimePlanner.upcomingSlots(after: date(23, 50), intervalMinutes: 15, count: 2, calendar: calendar)
         #expect(slots == [date(day: 11, 0, 0), date(day: 11, 0, 15)])
     }
+
+    // MARK: Schedules
+
+    /// Mon–Fri 9 AM–5 PM, and Sat–Sun 10 AM until midnight. January 2026: the 15th is a Thursday.
+    func weekdaysAndWeekends(_ interval: ChimeInterval) -> ChimeSettings {
+        ChimeSettings(isInfinite: false, interval: interval, schedules: [
+            ChimeSchedule(start: TimeOfDay(hour: 9), end: TimeOfDay(hour: 17), weekdays: [.monday, .tuesday, .wednesday, .thursday, .friday]),
+            ChimeSchedule(start: TimeOfDay(hour: 10), end: nil, weekdays: [.saturday, .sunday]),
+        ])
+    }
+
+    @Test func infiniteIgnoresSchedules() {
+        var settings = weekdaysAndWeekends(.m60)
+        settings.isInfinite = true
+        let result = requests(settings, now: date(day: 15, 14, 10))
+        #expect(result.count == 24)
+        #expect(result.allSatisfy { $0.repeats && $0.dateComponents.weekday == nil })
+    }
+
+    @Test func schedulesRepeatDailyAndWeekly() {
+        let result = requests(weekdaysAndWeekends(.m30), now: date(day: 15, 14, 10))
+
+        // 10:00 AM–5:00 PM every day (15), 9:00 and 9:30 AM on weekdays (2 × 5), 5:30–11:30 PM on weekends (13 × 2).
+        #expect(result.count == 51)
+        #expect(result.allSatisfy { $0.repeats && $0.title == nil })
+        #expect(Set(result.map(\.id)).count == result.count)
+        #expect(result.filter { $0.dateComponents.weekday == nil }.count == 15)
+
+        let byID = Dictionary(uniqueKeysWithValues: result.map { ($0.id, $0) })
+        #expect(byID["chime-1700"]?.dateComponents == DateComponents(hour: 17, minute: 0))
+        #expect(byID["chime-0900-2"]?.dateComponents == DateComponents(hour: 9, minute: 0, weekday: 2))
+        #expect(byID["chime-0900-1"] == nil)
+        #expect(byID["chime-2330-7"]?.body == "11:30 PM")
+        #expect(byID["chime-0000"] == nil)
+    }
+
+    @Test func schedulesWithTooManySlotsUseOneShots() {
+        let result = requests(weekdaysAndWeekends(.m20), now: date(day: 15, 14, 10))
+
+        #expect(result.count == ChimePlanner.maxPending)
+        #expect(result.allSatisfy { !$0.repeats })
+        #expect(Set(result.map(\.id)).count == result.count)
+        #expect(calendar.date(from: result.first!.dateComponents) == date(day: 15, 14, 20))
+        #expect(calendar.date(from: result.last!.dateComponents) == date(day: 17, 19, 40))
+        #expect(result.last?.body == ChimeText.keepGoingReminder)
+
+        // Thursday 2:20 PM keeps the plain ID; Friday's 2:20 PM gets the date added.
+        #expect(result.first?.id == "chime-1420")
+        #expect(result.contains { $0.id == "chime-1420-20260116" })
+        #expect(result.contains { $0.id == "chime-0900" })
+    }
+
+    @Test func scheduleSkippedTodayResumesTomorrow() {
+        var settings = weekdaysAndWeekends(.m30)
+        let now = date(day: 15, 14, 10)
+        settings.schedules[0].skipToday(true, at: now, calendar: calendar)
+        let result = requests(settings, now: now)
+
+        #expect(result.count == ChimePlanner.maxPending)
+        #expect(result.allSatisfy { !$0.repeats })
+        #expect(calendar.date(from: result.first!.dateComponents) == date(day: 16, 9, 0))
+        #expect(calendar.date(from: result.last!.dateComponents) == date(day: 18, 19, 0))
+    }
+
+    @Test func skipAfterTheWindowEndedKeepsRepeating() {
+        var settings = weekdaysAndWeekends(.m30)
+        let now = date(day: 15, 18, 0)
+        settings.schedules[0].skipToday(true, at: now, calendar: calendar)
+        let result = requests(settings, now: now)
+
+        #expect(result.count == 51)
+        #expect(result.allSatisfy(\.repeats))
+    }
+
+    @Test func skippedWeeklyScheduleReachesNextWeek() {
+        var settings = ChimeSettings(isInfinite: false, interval: .m60, schedules: [
+            ChimeSchedule(start: TimeOfDay(hour: 9), end: TimeOfDay(hour: 10), weekdays: [.monday]),
+        ])
+        let now = date(day: 12, 8, 0)
+        settings.schedules[0].skipToday(true, at: now, calendar: calendar)
+        let result = requests(settings, now: now)
+
+        #expect(result.map { calendar.date(from: $0.dateComponents)! } == [date(day: 19, 9, 0), date(day: 19, 10, 0)])
+        #expect(result.last?.body == ChimeText.keepGoingReminder)
+    }
+
+    @Test func noActiveSchedulesSchedulesNothing() {
+        var settings = weekdaysAndWeekends(.m20)
+        settings.isScheduleEnabled = false
+        #expect(requests(settings, now: date(day: 15, 14, 10)).isEmpty)
+        #expect(requests(ChimeSettings(isInfinite: false), now: date(day: 15, 14, 10)).isEmpty)
+    }
+
+    @Test func slotsStopBeforeTheEnd() {
+        let slots = ChimePlanner.upcomingSlots(after: date(13, 0), before: date(14, 0), intervalMinutes: 20, count: .max, calendar: calendar)
+        #expect(slots == [date(13, 20), date(13, 40)])
+    }
 }
