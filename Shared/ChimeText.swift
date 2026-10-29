@@ -47,16 +47,16 @@ enum ChimeText {
         return "Get notifications \(every)\(during).\nExample: \(example.joined(separator: ", "))"
     }
 
-    /// "9:00 AM – 5:00 PM", or "9:00 AM – midnight" with no end time.
+    /// "9:00 AM – 5:00 PM"
     static func window(of schedule: ChimeSchedule, clock: ClockFormat) -> String {
-        let end = schedule.end.map { time($0, clock: clock) } ?? "midnight"
-        return "\(time(schedule.start, clock: clock)) – \(end)"
+        "\(time(schedule.start, clock: clock)) – \(time(schedule.end, clock: clock))"
     }
 
-    /// "Every day", "Weekdays", "Weekends", or e.g. "Mon, Wed, Fri". No days selected means every day.
+    /// "Every day", "Weekdays", "Weekends", "No days", or e.g. "Mon, Wed, Fri".
     static func days(_ weekdays: Set<Weekday>) -> String {
         let weekend: Set<Weekday> = [.saturday, .sunday]
-        if weekdays.isEmpty || weekdays.count == Weekday.allCases.count { return "Every day" }
+        if weekdays.isEmpty { return "No days" }
+        if weekdays.count == Weekday.allCases.count { return "Every day" }
         if weekdays == Set(Weekday.allCases).subtracting(weekend) { return "Weekdays" }
         if weekdays == weekend { return "Weekends" }
         return weekdays.sorted().map(\.shortLabel).joined(separator: ", ")

@@ -36,7 +36,7 @@ struct ChimeScheduleTests {
     }
 
     @Test func schedulesRoundTrip() throws {
-        var schedule = ChimeSchedule(start: TimeOfDay(hour: 10), end: nil, weekdays: [.saturday, .sunday])
+        var schedule = ChimeSchedule(start: TimeOfDay(hour: 10), end: .lastMinute, weekdays: [.saturday, .sunday])
         schedule.skipToday(true, at: date(14), calendar: calendar)
         let settings = ChimeSettings(isInfinite: false, schedules: [schedule, ChimeSchedule(isEnabled: false)])
 
@@ -54,13 +54,15 @@ struct ChimeScheduleTests {
         #expect(!schedule.contains(TimeOfDay(hour: 17, minute: 1)))
     }
 
-    @Test func noEndTimeRunsUntilMidnight() {
-        let schedule = ChimeSchedule(start: TimeOfDay(hour: 10), end: nil)
-        #expect(schedule.contains(TimeOfDay(hour: 23, minute: 59)))
-        #expect(!schedule.contains(TimeOfDay(hour: 0)))
+    @Test func decodesSchedulesSavedWithoutEndOrDays() throws {
+        let json = #"{"id":"6F9619FF-8B86-D011-B42D-00C04FC964FF","isEnabled":true,"start":{"hour":10,"minute":0},"weekdays":[]}"#
+        let schedule = try JSONDecoder().decode(ChimeSchedule.self, from: Data(json.utf8))
+        #expect(schedule.start == TimeOfDay(hour: 10))
+        #expect(schedule.end == .lastMinute)
+        #expect(schedule.weekdays == Set(Weekday.allCases))
     }
 
-    @Test func noDaysMeansEveryDay() {
+    @Test func newSchedulesApplyEveryDay() {
         #expect(Weekday.allCases.allSatisfy(ChimeSchedule().applies(to:)))
 
         let weekend = ChimeSchedule(weekdays: [.saturday, .sunday])
@@ -77,7 +79,6 @@ struct ChimeScheduleTests {
         let schedule = ChimeSchedule(start: TimeOfDay(hour: 9), end: TimeOfDay(hour: 17))
         #expect(!schedule.hasEnded(at: date(17, 0), calendar: calendar))
         #expect(schedule.hasEnded(at: date(17, 1), calendar: calendar))
-        #expect(!ChimeSchedule(end: nil).hasEnded(at: date(23, 59), calendar: calendar))
     }
 
     @Test func skippingTodayLastsUntilMidnight() {
@@ -114,7 +115,7 @@ struct ChimeScheduleTests {
     @Test func schedulesDecideWhenInfiniteIsOff() {
         let settings = scheduled(
             ChimeSchedule(start: TimeOfDay(hour: 9), end: TimeOfDay(hour: 17), weekdays: weekdays),
-            ChimeSchedule(start: TimeOfDay(hour: 10), end: nil, weekdays: [.saturday, .sunday])
+            ChimeSchedule(start: TimeOfDay(hour: 10), end: .lastMinute, weekdays: [.saturday, .sunday])
         )
         #expect(settings.chimes(at: date(9), calendar: calendar))
         #expect(settings.chimes(at: date(17), calendar: calendar))
@@ -167,11 +168,10 @@ struct ChimeScheduleTests {
         let schedule = ChimeSchedule(start: TimeOfDay(hour: 9), end: TimeOfDay(hour: 17, minute: 30))
         #expect(ChimeText.window(of: schedule, clock: .twelveHour) == "9:00 AM – 5:30 PM")
         #expect(ChimeText.window(of: schedule, clock: .twentyFourHour) == "09:00 – 17:30")
-        #expect(ChimeText.window(of: ChimeSchedule(start: TimeOfDay(hour: 10), end: nil), clock: .twelveHour) == "10:00 AM – midnight")
     }
 
     @Test func daysText() {
-        #expect(ChimeText.days([]) == "Every day")
+        #expect(ChimeText.days([]) == "No days")
         #expect(ChimeText.days(Set(Weekday.allCases)) == "Every day")
         #expect(ChimeText.days(weekdays) == "Weekdays")
         #expect(ChimeText.days([.sunday, .saturday]) == "Weekends")

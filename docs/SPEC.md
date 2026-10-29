@@ -12,7 +12,7 @@ Notifications at clock-aligned intervals, e.g. every 15 min → 1:00, 1:15, 1:30
 | watchOS complication | Bell icon reflects ON/OFF (`bell.fill` / `bell.slash`); tap opens the watch app |
 
 - **Today** lists the active schedules for today's weekday by start time, hidden when the master toggle is off or there are none. Each window that hasn't passed has a toggle that turns that schedule off for the rest of today. Once a window has passed it shows **Done** (or **Skipped**, if turned off) and no toggle. While Infinite is on, the section is dimmed and disabled with the note "Infinite is on, so schedules aren't used." The section refreshes every minute.
-- **Schedules** has one row per schedule ("9:00 AM – 5:00 PM" / "Weekdays") with its own toggle, and **Add Schedule**. Tapping a row opens the editor: start time, **End Time** toggle and end time (only times after the start; off = until midnight), and day buttons S M T W T F S (none = every day). Delete from the editor or by swiping the row.
+- **Schedules** has one row per schedule ("9:00 AM – 5:00 PM" / "Weekdays") with its own toggle, and **Add Schedule**. Tapping a row opens the editor: start time, end time, and day buttons S M T W T F S (all selected for a new schedule). Delete from the editor or by swiping the row.
 - Chimes land on clock boundaries (20 min → :00, :20, :40), not relative to when enabled.
 - Defaults: **ON, Infinite on, 20 min, "1:20 PM", 12-hour, Time Sensitive off, no schedules**.
 - Notification permission is requested on first launch. If denied, the app shows a banner linking to Settings.
@@ -33,8 +33,8 @@ struct ChimeSchedule: Codable, Equatable, Identifiable {
     var id = UUID()
     var isEnabled = true                     // the schedule's own toggle
     var start = TimeOfDay(hour: 9)
-    var end: TimeOfDay? = TimeOfDay(hour: 17) // nil = until midnight
-    var weekdays: Set<Weekday> = []          // empty = every day
+    var end = TimeOfDay(hour: 17)            // inclusive; after start
+    var weekdays = Set(Weekday.allCases)     // at least one
     var skippedUntil: Date?                  // turned off for today → the next midnight
 }
 
@@ -61,13 +61,13 @@ chimes(at date):
   if isInfinite:  true                               // every slot, every day; schedules ignored
   any schedule where
       schedule.isEnabled                             // "active" schedules
-      && schedule applies to date's weekday          // no days selected = every day
-      && start <= time <= (end ?? 11:59 PM)          // an explicit end time fires; midnight belongs to the next day
+      && date's weekday in schedule.weekdays
+      && start <= time <= end                        // a chime at the end time fires
       && !(date < schedule.skippedUntil)             // not turned off for today
 ```
 
 - Slots are still clock-aligned (20 min → :00, :20, :40). A window that starts off a boundary chimes from the next one (9:10 → 9:20).
-- `end` is always after `start`; the end-time picker only offers later times.
+- `end` is always after `start`, and a schedule has at least one day; the editor won't save otherwise. Schedules saved before the end time was required load with 11:59 PM (they ran until midnight), and ones with no days load with every day.
 - Overlapping schedules chime once per slot. Turning one off for today leaves the slots the other covers.
 - Turning a schedule off for today sets `skippedUntil` to the next midnight, so it turns itself back on; turning it back on clears it.
 - Infinite off with no active schedules means no chimes. The master toggle's description says so: "No chimes scheduled. Turn on Infinite or a schedule."
@@ -95,7 +95,7 @@ reschedule(settings):
 | --- | --- |
 | Infinite, 30 / 60 min | 48 / 24 daily repeating |
 | Infinite, 5 / 10 / 15 / 20 min | 64 one-shots → ~5 / ~11 / ~16 / ~21 h of coverage |
-| Mon–Fri 9 AM–5 PM + Sat–Sun 10 AM–midnight, 30 min | 51 repeating: 15 daily (10 AM–5 PM), 10 weekly (9:00, 9:30 on weekdays), 26 weekly (5:30–11:30 PM on weekends) |
+| Mon–Fri 9 AM–5 PM + Sat–Sun 10 AM–11:59 PM, 30 min | 51 repeating: 15 daily (10 AM–5 PM), 10 weekly (9:00, 9:30 on weekdays), 26 weekly (5:30–11:30 PM on weekends) |
 | Same, 20 min, at Thu 2:10 PM | 64 one-shots: Thu 2:20 PM … Sat 7:40 PM |
 | Same, 30 min, Mon–Fri turned off for today at Thu 2:10 PM | 64 one-shots from Fri 9:00 AM … Sun 7:00 PM; back to 51 repeating at the first refresh after midnight |
 | Same, turned off for today at Thu 6:00 PM | 51 repeating: today's window has passed, so nothing changes |

@@ -20,13 +20,9 @@ struct ScheduleEditor: View {
             Form {
                 Section {
                     DatePicker("Start", selection: startBinding, displayedComponents: .hourAndMinute)
-                    Toggle("End Time", isOn: hasEndBinding)
-                        .disabled(schedule.start == .lastMinute)
-                    if schedule.end != nil {
-                        DatePicker("End", selection: endBinding, in: endRange, displayedComponents: .hourAndMinute)
-                    }
+                    DatePicker("End", selection: endBinding, in: endRange, displayedComponents: .hourAndMinute)
                 } footer: {
-                    Text(schedule.end == nil ? "Chimes until midnight." : "Chimes at the end time too.")
+                    Text("Chimes at the end time too.")
                 }
 
                 Section {
@@ -45,7 +41,7 @@ struct ScheduleEditor: View {
                 } header: {
                     Text("Days")
                 } footer: {
-                    Text(schedule.weekdays.isEmpty ? "No days selected: every day." : ChimeText.days(schedule.weekdays))
+                    Text(ChimeText.days(schedule.weekdays))
                 }
 
                 if !isNew {
@@ -75,31 +71,24 @@ struct ScheduleEditor: View {
 
     // MARK: Times
 
-    /// Moving the start to or past the end pushes the end an hour after it (or clears it at 11:59 PM),
-    /// so the end always stays after the start.
+    /// Moving the start to or past the end pushes the end an hour after it (up to 11:59 PM),
+    /// so the end stays after the start.
     private var startBinding: Binding<Date> {
         Binding(
             get: { date(for: schedule.start) },
             set: { date in
                 let start = TimeOfDay(of: date, calendar: .current)
                 schedule.start = start
-                if let end = schedule.end, end <= start {
-                    schedule.end = defaultEnd(after: start)
+                if schedule.end <= start {
+                    schedule.end = TimeOfDay(minuteOfDay: min(start.minuteOfDay + 60, TimeOfDay.lastMinute.minuteOfDay))
                 }
             }
         )
     }
 
-    private var hasEndBinding: Binding<Bool> {
-        Binding(
-            get: { schedule.end != nil },
-            set: { hasEnd in schedule.end = hasEnd ? defaultEnd(after: schedule.start) : nil }
-        )
-    }
-
     private var endBinding: Binding<Date> {
         Binding(
-            get: { date(for: schedule.end ?? .lastMinute) },
+            get: { date(for: schedule.end) },
             set: { date in schedule.end = TimeOfDay(of: date, calendar: .current) }
         )
     }
@@ -108,11 +97,6 @@ struct ScheduleEditor: View {
     private var endRange: ClosedRange<Date> {
         let earliest = TimeOfDay(minuteOfDay: min(schedule.start.minuteOfDay + 1, TimeOfDay.lastMinute.minuteOfDay))
         return date(for: earliest)...date(for: .lastMinute)
-    }
-
-    private func defaultEnd(after start: TimeOfDay) -> TimeOfDay? {
-        guard start < .lastMinute else { return nil }
-        return TimeOfDay(minuteOfDay: min(start.minuteOfDay + 60, TimeOfDay.lastMinute.minuteOfDay))
     }
 
     /// DatePicker works in dates; a fixed day with no daylight saving change stands in for any day.

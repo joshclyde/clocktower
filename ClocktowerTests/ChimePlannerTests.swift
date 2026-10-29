@@ -84,11 +84,11 @@ struct ChimePlannerTests {
 
     // MARK: Schedules
 
-    /// Mon–Fri 9 AM–5 PM, and Sat–Sun 10 AM until midnight. January 2026: the 15th is a Thursday.
+    /// Mon–Fri 9 AM–5 PM, and Sat–Sun 10 AM–11:59 PM. January 2026: the 15th is a Thursday.
     func weekdaysAndWeekends(_ interval: ChimeInterval) -> ChimeSettings {
         ChimeSettings(isInfinite: false, interval: interval, schedules: [
             ChimeSchedule(start: TimeOfDay(hour: 9), end: TimeOfDay(hour: 17), weekdays: [.monday, .tuesday, .wednesday, .thursday, .friday]),
-            ChimeSchedule(start: TimeOfDay(hour: 10), end: nil, weekdays: [.saturday, .sunday]),
+            ChimeSchedule(start: TimeOfDay(hour: 10), end: .lastMinute, weekdays: [.saturday, .sunday]),
         ])
     }
 
