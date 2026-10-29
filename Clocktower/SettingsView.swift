@@ -13,7 +13,7 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationStack {
-            // Every minute, so the Today section notices when a window has passed.
+            // Every minute, so today's schedules notice when a window has passed.
             TimelineView(.everyMinute) { context in
                 form(now: context.date)
             }
@@ -48,25 +48,7 @@ struct SettingsView: View {
                 }
             }
 
-            Section {
-                Toggle(isOn: controller.binding(\.isEnabled)) {
-                    Label("Chimes", systemImage: settings.isEnabled ? "bell.fill" : "bell.slash")
-                }
-            } footer: {
-                Text(ChimeText.appDescription(for: settings))
-            }
-
-            Section {
-                Toggle(isOn: controller.binding(\.isInfinite)) {
-                    Label("Infinite", systemImage: "infinity")
-                }
-            } footer: {
-                Text(settings.isInfinite
-                    ? "Chimes all day, every day. Turn off to chime only during your schedules."
-                    : "Chimes only during your schedules.")
-            }
-
-            todaySection(now: now)
+            onOffSection(now: now)
 
             Section("Every") {
                 LazyVGrid(columns: Array(repeating: GridItem(), count: 3)) {
@@ -128,39 +110,31 @@ struct SettingsView: View {
         }
     }
 
-    /// Today's schedules, each with a toggle to turn it off for the rest of the day until its window passes.
-    @ViewBuilder
-    private func todaySection(now: Date) -> some View {
-        let schedules = settings.todaysSchedules(at: now, calendar: .current)
-        if settings.isEnabled && !schedules.isEmpty {
-            Section {
-                ForEach(schedules) { schedule in
-                    let window = ChimeText.window(of: schedule, clock: settings.clock)
-                    if schedule.hasEnded(at: now, calendar: .current) {
-                        let skipped = schedule.isSkipped(at: now)
-                        LabeledContent(window) {
-                            Label(skipped ? "Skipped" : "Done", systemImage: skipped ? "slash.circle" : "checkmark.circle")
-                        }
-                        .foregroundStyle(.secondary)
-                    } else {
-                        Toggle(window, isOn: Binding(
-                            get: { !schedule.isSkipped(at: now) },
-                            set: { isOn in
-                                controller.update { settings in
-                                    settings.updateSchedule(schedule.id) { $0.skipToday(!isOn, at: .now, calendar: .current) }
-                                }
-                            }
-                        ))
+    /// The on/off controls, together at the top: the master toggle, Infinite, and today's schedules
+    /// (shown while chimes are on; dimmed while Infinite is on).
+    private func onOffSection(now: Date) -> some View {
+        let today = settings.isEnabled ? settings.todaysSchedules(at: now, calendar: .current) : []
+        var footer = ChimeText.appDescription(for: settings)
+        if !today.isEmpty {
+            footer += settings.isInfinite ? "\n\nInfinite is on, so today's schedules aren't used." : "\n\nTurning off one of today's schedules lasts until midnight."
+        }
+        return Section {
+            Toggle(isOn: controller.binding(\.isEnabled)) {
+                Label("Chimes", systemImage: settings.isEnabled ? "bell.fill" : "bell.slash")
+            }
+            Toggle(isOn: controller.binding(\.isInfinite)) {
+                Label("Infinite", systemImage: "infinity")
+            }
+            ForEach(today) { schedule in
+                TodayRow(schedule: schedule, clock: settings.clock, now: now) { skip in
+                    controller.update { settings in
+                        settings.updateSchedule(schedule.id) { $0.skipToday(skip, at: .now, calendar: .current) }
                     }
                 }
-            } header: {
-                Text("Today")
-            } footer: {
-                Text(settings.isInfinite
-                    ? "Infinite is on, so schedules aren't used."
-                    : "Turn a schedule off for the rest of today. It turns back on tomorrow.")
+                .disabled(settings.isInfinite)
             }
-            .disabled(settings.isInfinite)
+        } footer: {
+            Text(footer)
         }
     }
 
@@ -187,6 +161,44 @@ struct SettingsView: View {
             Text(settings.isInfinite
                 ? "Infinite is on, so schedules aren't used. Turn it off to chime only during your schedules."
                 : "Chimes only during these windows.")
+        }
+    }
+}
+
+/// One of today's schedules: a toggle that turns it off until midnight, or Done / Skipped once its
+/// window has passed.
+private struct TodayRow: View {
+    let schedule: ChimeSchedule
+    let clock: ClockFormat
+    let now: Date
+    let skipToday: (Bool) -> Void
+
+    var body: some View {
+        if schedule.hasEnded(at: now, calendar: .current) {
+            let skipped = schedule.isSkipped(at: now)
+            LabeledContent {
+                Label(skipped ? "Skipped" : "Done", systemImage: skipped ? "slash.circle" : "checkmark.circle")
+            } label: {
+                title
+            }
+            .foregroundStyle(.secondary)
+        } else {
+            Toggle(isOn: Binding(get: { !schedule.isSkipped(at: now) }, set: { isOn in skipToday(!isOn) })) {
+                title
+            }
+        }
+    }
+
+    private var title: some View {
+        Label {
+            VStack(alignment: .leading) {
+                Text(ChimeText.window(of: schedule, clock: clock))
+                Text("Today")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        } icon: {
+            Image(systemName: "calendar")
         }
     }
 }
