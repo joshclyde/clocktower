@@ -19,7 +19,7 @@ struct TimeOfDay: Codable, Hashable, Comparable {
         self.init(hour: components.hour!, minute: components.minute!)
     }
 
-    /// The last minute of the day, 11:59 PM. A schedule with no end time runs through it.
+    /// The last minute of the day, 11:59 PM.
     static let lastMinute = TimeOfDay(hour: 23, minute: 59)
 
     /// Minutes since midnight, 0...1439.
@@ -54,32 +54,45 @@ struct ChimeSchedule: Codable, Equatable, Identifiable {
     var id = UUID()
     var isEnabled = true
     var start = TimeOfDay(hour: 9)
-    /// The last chime time; a chime at the end time fires. `nil` runs until midnight, and the
-    /// 12:00 AM chime belongs to the next day. Always after `start`.
-    var end: TimeOfDay? = TimeOfDay(hour: 17)
-    /// Empty means every day.
-    var weekdays: Set<Weekday> = []
+    /// The last chime time; a chime at the end time fires. After `start` in saved schedules.
+    var end = TimeOfDay(hour: 17)
+    /// Starts with every day; saved schedules have at least one.
+    var weekdays = Set(Weekday.allCases)
     /// Set to the next midnight when turned off for today, so it turns back on by itself.
     var skippedUntil: Date?
 }
 
 extension ChimeSchedule {
+    /// Decodes field by field. Schedules saved by earlier builds could have no end time (until
+    /// midnight, now 11:59 PM) or no days (every day, now all seven).
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let defaults = ChimeSchedule()
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? defaults.id
+        isEnabled = try container.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? defaults.isEnabled
+        start = try container.decodeIfPresent(TimeOfDay.self, forKey: .start) ?? defaults.start
+        end = try container.decodeIfPresent(TimeOfDay.self, forKey: .end) ?? .lastMinute
+        let weekdays = try container.decodeIfPresent(Set<Weekday>.self, forKey: .weekdays) ?? []
+        self.weekdays = weekdays.isEmpty ? defaults.weekdays : weekdays
+        skippedUntil = try container.decodeIfPresent(Date.self, forKey: .skippedUntil)
+    }
+
     func applies(to weekday: Weekday) -> Bool {
-        weekdays.isEmpty || weekdays.contains(weekday)
+        weekdays.contains(weekday)
     }
 
     /// Whether `time` is inside the window. Both the start and the end are included.
     func contains(_ time: TimeOfDay) -> Bool {
-        start <= time && time <= (end ?? .lastMinute)
+        start <= time && time <= end
     }
 
     func isSkipped(at date: Date) -> Bool {
         skippedUntil.map { date < $0 } ?? false
     }
 
-    /// Whether today's window has passed. With no end time it runs until midnight, so it never has.
+    /// Whether today's window has passed.
     func hasEnded(at date: Date, calendar: Calendar) -> Bool {
-        end.map { TimeOfDay(of: date, calendar: calendar) > $0 } ?? false
+        TimeOfDay(of: date, calendar: calendar) > end
     }
 
     /// Turns the schedule off for the rest of `date`'s day, or back on.
