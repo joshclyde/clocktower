@@ -59,3 +59,11 @@ Review `SettingsView` for settings whose change adds or removes UI above the con
 - Go through every control and note what each change shows, hides, or resizes, and where that is relative to the control.
 - Possible fixes: keep conditional UI below the control that drives it; keep rows in place and disable or dim them instead of removing them; or keep the touched control on screen with `ScrollViewReader` / `scrollPosition`. Animating the change (`withAnimation`) makes it smoother but doesn't stop the jump on its own.
 - Check the watch app's settings too.
+
+## Lock the iPhone app to portrait
+
+Stop the iOS app from rotating on iPhone; it should stay in portrait. The settings page is a single scrolling list that doesn't gain anything in landscape.
+
+- Set the supported orientations for the `Clocktower` target in `project.yml` (the Info.plist is generated): `INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait`. Today no orientation keys are set, so it falls back to Xcode's default (portrait plus both landscapes).
+- Decide whether to also allow upside-down portrait (most iPhone apps don't).
+- Open questions: whether the app runs on iPad at all (no `TARGETED_DEVICE_FAMILY` is set), and if so whether iPad stays free to rotate, since iPad apps that support multitasking must support every orientation.
