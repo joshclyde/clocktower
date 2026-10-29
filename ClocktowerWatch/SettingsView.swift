@@ -7,7 +7,7 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationStack {
-            // Every minute, so the Today section notices when a window has passed.
+            // Every minute, so today's schedules notice when a window has passed.
             TimelineView(.everyMinute) { context in
                 list(now: context.date)
             }
@@ -17,21 +17,7 @@ struct SettingsView: View {
 
     private func list(now: Date) -> some View {
         List {
-            Section {
-                Toggle(isOn: controller.binding(\.isEnabled)) {
-                    Label("Chimes", systemImage: settings.isEnabled ? "bell.fill" : "bell.slash")
-                }
-            } footer: {
-                Text(ChimeText.appDescription(for: settings))
-            }
-
-            Section {
-                Toggle("Infinite", isOn: controller.binding(\.isInfinite))
-            } footer: {
-                Text(settings.isInfinite ? "Chimes all day, every day." : "Chimes only during your schedules.")
-            }
-
-            todaySection(now: now)
+            onOffSection(now: now)
 
             Section("Every") {
                 LazyVGrid(columns: [GridItem(), GridItem()]) {
@@ -76,38 +62,51 @@ struct SettingsView: View {
         }
     }
 
-    /// Today's schedules, each with a toggle to turn it off for the rest of the day until its window passes.
-    @ViewBuilder
-    private func todaySection(now: Date) -> some View {
-        let schedules = settings.todaysSchedules(at: now, calendar: .current)
-        if settings.isEnabled && !schedules.isEmpty {
-            Section {
-                ForEach(schedules) { schedule in
-                    let window = ChimeText.window(of: schedule, clock: settings.clock)
+    /// The on/off controls, together at the top: the master toggle, Infinite, and today's schedules
+    /// (shown while chimes are on; dimmed while Infinite is on).
+    private func onOffSection(now: Date) -> some View {
+        let today = settings.isEnabled ? settings.todaysSchedules(at: now, calendar: .current) : []
+        var footer = ChimeText.appDescription(for: settings)
+        if !today.isEmpty {
+            footer += settings.isInfinite ? "\n\nInfinite is on, so today's schedules aren't used." : "\n\nTurning one off lasts until midnight."
+        }
+        return Section {
+            Toggle(isOn: controller.binding(\.isEnabled)) {
+                Label("Chimes", systemImage: settings.isEnabled ? "bell.fill" : "bell.slash")
+            }
+            Toggle("Infinite", isOn: controller.binding(\.isInfinite))
+            ForEach(today) { schedule in
+                let window = ChimeText.window(of: schedule, clock: settings.clock)
+                Group {
                     if schedule.hasEnded(at: now, calendar: .current) {
                         VStack(alignment: .leading) {
                             Text(window)
-                            Text(schedule.isSkipped(at: now) ? "Skipped" : "Done")
+                            Text(schedule.isSkipped(at: now) ? "Today · Skipped" : "Today · Done")
                                 .font(.footnote)
                         }
                         .foregroundStyle(.secondary)
                     } else {
-                        Toggle(window, isOn: Binding(
+                        Toggle(isOn: Binding(
                             get: { !schedule.isSkipped(at: now) },
                             set: { isOn in
                                 controller.update { settings in
                                     settings.updateSchedule(schedule.id) { $0.skipToday(!isOn, at: .now, calendar: .current) }
                                 }
                             }
-                        ))
+                        )) {
+                            VStack(alignment: .leading) {
+                                Text(window)
+                                Text("Today")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                     }
                 }
-            } header: {
-                Text("Today")
-            } footer: {
-                Text(settings.isInfinite ? "Infinite is on, so schedules aren't used." : "Turn one off for the rest of today.")
+                .disabled(settings.isInfinite)
             }
-            .disabled(settings.isInfinite)
+        } footer: {
+            Text(footer)
         }
     }
 
