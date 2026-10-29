@@ -23,11 +23,11 @@ struct ChimeTextTests {
 
     @Test func descriptionGivesExampleTimes() {
         #expect(ChimeText.appDescription(for: ChimeSettings(interval: .m5))
-            == "Get notifications every 5 minutes.\nExample: 1:00 PM, 1:05 PM, 1:10 PM")
+            == "Get notifications every 5 minutes, all day.\nExample: 1:00 PM, 1:05 PM, 1:10 PM")
         #expect(ChimeText.appDescription(for: ChimeSettings(interval: .m30, clock: .twentyFourHour))
-            == "Get notifications every 30 minutes.\nExample: 13:00, 13:30, 14:00")
+            == "Get notifications every 30 minutes, all day.\nExample: 13:00, 13:30, 14:00")
         #expect(ChimeText.appDescription(for: ChimeSettings(interval: .m60))
-            == "Get notifications every hour.\nExample: 1:00 PM, 2:00 PM, 3:00 PM")
+            == "Get notifications every hour, all day.\nExample: 1:00 PM, 2:00 PM, 3:00 PM")
     }
 
     @Test func descriptionWhenOff() {

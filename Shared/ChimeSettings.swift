@@ -24,13 +24,48 @@ enum ClockFormat: String, Codable, CaseIterable, Identifiable {
     var shortLabel: String { self == .twelveHour ? "12h" : "24h" }
 }
 
+/// The top-level choice in the UI. Stored as `ChimeSettings.isEnabled` and `isInfinite`.
+enum ChimeMode: CaseIterable, Identifiable {
+    case off       // no chimes
+    case on        // every interval, every day
+    case schedule  // only during the schedules
+
+    var id: Self { self }
+
+    var label: String {
+        switch self {
+        case .off: return "Off"
+        case .on: return "On"
+        case .schedule: return "Schedule"
+        }
+    }
+}
+
 struct ChimeSettings: Codable, Equatable {
+    /// False for Off. See `mode`.
     var isEnabled = true
+    /// While enabled: true for On (every interval, every day), false for Schedule. Keeps its
+    /// original name so saved settings still load. See `mode`.
+    var isInfinite = true
     var interval: ChimeInterval = .m20
     var style: MessageStyle = .timeOnly
     var clock: ClockFormat = .twelveHour
     /// Deliver chimes as Time Sensitive so they come through a Focus.
     var isTimeSensitive = false
+    var schedules: [ChimeSchedule] = []
+}
+
+extension ChimeSettings {
+    /// Off, On or Schedule. Choosing Off leaves `isInfinite` as it was.
+    var mode: ChimeMode {
+        get { !isEnabled ? .off : isInfinite ? .on : .schedule }
+        set {
+            isEnabled = newValue != .off
+            if newValue != .off {
+                isInfinite = newValue == .on
+            }
+        }
+    }
 }
 
 extension ChimeSettings {
@@ -39,10 +74,12 @@ extension ChimeSettings {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let defaults = ChimeSettings()
         isEnabled = try container.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? defaults.isEnabled
+        isInfinite = try container.decodeIfPresent(Bool.self, forKey: .isInfinite) ?? defaults.isInfinite
         interval = try container.decodeIfPresent(ChimeInterval.self, forKey: .interval) ?? defaults.interval
         style = try container.decodeIfPresent(MessageStyle.self, forKey: .style) ?? defaults.style
         clock = try container.decodeIfPresent(ClockFormat.self, forKey: .clock) ?? defaults.clock
         isTimeSensitive = try container.decodeIfPresent(Bool.self, forKey: .isTimeSensitive) ?? defaults.isTimeSensitive
+        schedules = try container.decodeIfPresent([ChimeSchedule].self, forKey: .schedules) ?? defaults.schedules
     }
 }
 

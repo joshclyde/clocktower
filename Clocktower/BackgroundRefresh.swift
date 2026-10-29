@@ -1,6 +1,7 @@
 import BackgroundTasks
 
-/// Best-effort background refresh that refills the 5–20 minute notification window.
+/// Best-effort background refresh that refills one-shot chimes (5–20 min intervals, or a schedule
+/// turned off for today).
 ///
 /// iOS decides when (or whether) to run it, based on app usage, battery, Low Power Mode and the
 /// Background App Refresh setting. It never runs after the user force-quits the app.
