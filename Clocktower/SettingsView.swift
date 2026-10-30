@@ -146,8 +146,8 @@ struct SettingsView: View {
         }
     }
 
-    /// The clock format, then the message as it reads: optional text before the time, the time
-    /// (fixed), and optional text after it, with an example that updates while typing.
+    /// The clock format, then the message as it reads: optional text before the time, an example of
+    /// the whole message (updating while typing) where the time goes, and optional text after it.
     private var messageSection: some View {
         Section {
             Picker("Clock", selection: controller.binding(\.clock)) {
@@ -157,13 +157,11 @@ struct SettingsView: View {
             }
             .pickerStyle(.segmented)
             messageTextField("Text before the time", text: $messageDraft.prefix, field: .prefix)
-            Label(ChimeText.time(hour: 13, minute: 20, clock: settings.clock), systemImage: "clock")
+            Label("Example: \(ChimeText.sample(clock: settings.clock, customMessage: messageDraft))", systemImage: "clock")
                 .foregroundStyle(.secondary)
             messageTextField("Text after the time", text: $messageDraft.suffix, field: .suffix)
         } header: {
             Text("Message")
-        } footer: {
-            Text("Example: \(ChimeText.sample(clock: settings.clock, customMessage: messageDraft))")
         }
     }
 
