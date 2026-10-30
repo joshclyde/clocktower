@@ -146,8 +146,8 @@ struct SettingsView: View {
         }
     }
 
-    /// The clock format, and the optional text before and after the time, with an example that
-    /// updates while typing.
+    /// The clock format, then the message as it reads: optional text before the time, the time
+    /// (fixed), and optional text after it, with an example that updates while typing.
     private var messageSection: some View {
         Section {
             Picker("Clock", selection: controller.binding(\.clock)) {
@@ -156,21 +156,35 @@ struct SettingsView: View {
                 }
             }
             .pickerStyle(.segmented)
-            LabeledContent("Before") {
-                TextField("Before", text: $messageDraft.prefix, prompt: Text("e.g. Stand up"))
-                    .focused($messageField, equals: .prefix)
-                    // Return closes the keyboard, which ends editing and saves the message.
-                    .submitLabel(.done)
-            }
-            LabeledContent("After") {
-                TextField("After", text: $messageDraft.suffix, prompt: Text("e.g. and stretch"))
-                    .focused($messageField, equals: .suffix)
-                    .submitLabel(.done)
-            }
+            messageTextField("Text before the time", text: $messageDraft.prefix, field: .prefix)
+            Label(ChimeText.time(hour: 13, minute: 20, clock: settings.clock), systemImage: "clock")
+                .foregroundStyle(.secondary)
+            messageTextField("Text after the time", text: $messageDraft.suffix, field: .suffix)
         } header: {
             Text("Message")
         } footer: {
             Text("Example: \(ChimeText.sample(clock: settings.clock, customMessage: messageDraft))")
+        }
+    }
+
+    /// A message field with a clear button while it's being edited and has text, like Contacts.
+    private func messageTextField(_ prompt: String, text: Binding<String>, field: MessageField) -> some View {
+        HStack {
+            TextField(prompt, text: text)
+                .focused($messageField, equals: field)
+                // Return closes the keyboard, which ends editing and saves the message.
+                .submitLabel(.done)
+            if messageField == field, !text.wrappedValue.isEmpty {
+                Button {
+                    text.wrappedValue = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.tertiary)
+                }
+                // Borderless keeps it tappable on its own inside the Form row.
+                .buttonStyle(.borderless)
+                .accessibilityLabel("Clear")
+            }
         }
     }
 
