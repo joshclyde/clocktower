@@ -13,7 +13,7 @@ struct ChimeRequest: Equatable {
 enum ChimePlanner {
     /// iOS keeps at most 64 pending notification requests per app.
     static let maxPending = 64
-    /// How far ahead one-shot chimes look for slots that fire. Covers a full week after a skipped day.
+    /// How far ahead one-shot chimes look for slots that fire. Covers a full week after a snoozed day.
     static let oneShotHorizonDays = 14
 
     static func requests(for settings: ChimeSettings, now: Date, calendar: Calendar) -> [ChimeRequest] {
@@ -23,11 +23,11 @@ enum ChimePlanner {
         // Few enough slots per week: repeating requests, which never run out. A time of day that
         // chimes every day is one daily request; otherwise one weekly request per weekday it chimes.
         let repeating = repeatingRequests(for: settings)
-        if repeating.count <= maxPending, !skipChangesToday(settings, now: now, calendar: calendar) {
+        if repeating.count <= maxPending, !snoozeChangesToday(settings, now: now, calendar: calendar) {
             return repeating
         }
 
-        // Too many, or a schedule is turned off for the rest of today (a repeating request can't skip
+        // Too many, or schedules are snoozed for the rest of today (a repeating request can't skip
         // one day): the next 64 chimes as one-shots. The last one asks the user to reopen the app.
         let dates = upcomingSlots(
             after: now,
@@ -80,13 +80,13 @@ enum ChimePlanner {
         }
     }
 
-    /// Whether a schedule turned off for today drops a chime that the repeating requests would still
-    /// deliver before midnight. Once its window has passed it no longer matters.
-    private static func skipChangesToday(_ settings: ChimeSettings, now: Date, calendar: Calendar) -> Bool {
-        guard let skippedUntil = settings.schedules.compactMap(\.skippedUntil).max(), skippedUntil > now else {
+    /// Whether a snooze drops a chime that the repeating requests would still deliver before midnight.
+    /// Once today's windows have passed it no longer matters.
+    private static func snoozeChangesToday(_ settings: ChimeSettings, now: Date, calendar: Calendar) -> Bool {
+        guard let snoozedUntil = settings.snoozedUntil, snoozedUntil > now else {
             return false
         }
-        let slots = upcomingSlots(after: now, before: skippedUntil, intervalMinutes: settings.interval.minutes, count: .max, calendar: calendar)
+        let slots = upcomingSlots(after: now, before: snoozedUntil, intervalMinutes: settings.interval.minutes, count: .max, calendar: calendar)
         return slots.contains { slot in
             let weekday = Weekday(of: slot, calendar: calendar), time = TimeOfDay(of: slot, calendar: calendar)
             return settings.chimes(on: weekday, at: time) && !settings.chimes(at: slot, calendar: calendar)

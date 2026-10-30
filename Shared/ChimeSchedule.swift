@@ -58,8 +58,6 @@ struct ChimeSchedule: Codable, Equatable, Identifiable {
     var end = TimeOfDay(hour: 17)
     /// Starts with every day; saved schedules have at least one.
     var weekdays = Set(Weekday.allCases)
-    /// Set to the next midnight when turned off for today, so it turns back on by itself.
-    var skippedUntil: Date?
 }
 
 extension ChimeSchedule {
@@ -74,7 +72,6 @@ extension ChimeSchedule {
         end = try container.decodeIfPresent(TimeOfDay.self, forKey: .end) ?? .lastMinute
         let weekdays = try container.decodeIfPresent(Set<Weekday>.self, forKey: .weekdays) ?? []
         self.weekdays = weekdays.isEmpty ? defaults.weekdays : weekdays
-        skippedUntil = try container.decodeIfPresent(Date.self, forKey: .skippedUntil)
     }
 
     func applies(to weekday: Weekday) -> Bool {
@@ -86,10 +83,6 @@ extension ChimeSchedule {
         start <= time && time <= end
     }
 
-    func isSkipped(at date: Date) -> Bool {
-        skippedUntil.map { date < $0 } ?? false
-    }
-
     /// Whether today's window has passed.
     func hasEnded(at date: Date, calendar: Calendar) -> Bool {
         TimeOfDay(of: date, calendar: calendar) > end
@@ -99,11 +92,6 @@ extension ChimeSchedule {
 
     /// Whether the editor can save it: the end is after the start, and at least one day is selected.
     var isValid: Bool { endsAfterStart && !weekdays.isEmpty }
-
-    /// Turns the schedule off for the rest of `date`'s day, or back on.
-    mutating func skipToday(_ skip: Bool, at date: Date, calendar: Calendar) {
-        skippedUntil = skip ? calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: date)) : nil
-    }
 }
 
 // MARK: - Which chimes fire
@@ -118,16 +106,26 @@ extension ChimeSettings {
     func chimes(at date: Date, calendar: Calendar) -> Bool {
         guard isEnabled else { return false }
         if isInfinite { return true }
+        if isSnoozed(at: date) { return false }
         let weekday = Weekday(of: date, calendar: calendar)
         let time = TimeOfDay(of: date, calendar: calendar)
-        return activeSchedules.contains { $0.applies(to: weekday) && $0.contains(time) && !$0.isSkipped(at: date) }
+        return activeSchedules.contains { $0.applies(to: weekday) && $0.contains(time) }
     }
 
-    /// Whether a chime at `time` on `weekday` fires every week, ignoring schedules turned off for today.
+    /// Whether a chime at `time` on `weekday` fires every week, ignoring a snooze.
     func chimes(on weekday: Weekday, at time: TimeOfDay) -> Bool {
         guard isEnabled else { return false }
         if isInfinite { return true }
         return activeSchedules.contains { $0.applies(to: weekday) && $0.contains(time) }
+    }
+
+    func isSnoozed(at date: Date) -> Bool {
+        snoozedUntil.map { date < $0 } ?? false
+    }
+
+    /// Snoozes every schedule for the rest of `date`'s day, or ends the snooze.
+    mutating func snoozeToday(_ snooze: Bool, at date: Date, calendar: Calendar) {
+        snoozedUntil = snooze ? calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: date)) : nil
     }
 
     /// Applies `change` to the schedule with `id`, if it still exists.
@@ -136,7 +134,7 @@ extension ChimeSettings {
         change(&schedules[index])
     }
 
-    /// The Today section: active schedules for `date`'s weekday, by start time.
+    /// The Today rows: active schedules for `date`'s weekday, by start time.
     func todaysSchedules(at date: Date, calendar: Calendar) -> [ChimeSchedule] {
         let weekday = Weekday(of: date, calendar: calendar)
         return activeSchedules.filter { $0.applies(to: weekday) }.sorted { $0.start < $1.start }

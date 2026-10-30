@@ -133,10 +133,10 @@ struct ChimePlannerTests {
         #expect(result.contains { $0.id == "chime-0900" })
     }
 
-    @Test func scheduleSkippedTodayResumesTomorrow() {
+    @Test func snoozedTodayResumesTomorrow() {
         var settings = weekdaysAndWeekends(.m30)
         let now = date(day: 15, 14, 10)
-        settings.schedules[0].skipToday(true, at: now, calendar: calendar)
+        settings.snoozeToday(true, at: now, calendar: calendar)
         let result = requests(settings, now: now)
 
         #expect(result.count == ChimePlanner.maxPending)
@@ -145,22 +145,22 @@ struct ChimePlannerTests {
         #expect(calendar.date(from: result.last!.dateComponents) == date(day: 18, 19, 0))
     }
 
-    @Test func skipAfterTheWindowEndedKeepsRepeating() {
+    @Test func snoozeAfterTheWindowEndedKeepsRepeating() {
         var settings = weekdaysAndWeekends(.m30)
         let now = date(day: 15, 18, 0)
-        settings.schedules[0].skipToday(true, at: now, calendar: calendar)
+        settings.snoozeToday(true, at: now, calendar: calendar)
         let result = requests(settings, now: now)
 
         #expect(result.count == 51)
         #expect(result.allSatisfy(\.repeats))
     }
 
-    @Test func skippedWeeklyScheduleReachesNextWeek() {
+    @Test func snoozedWeeklyScheduleReachesNextWeek() {
         var settings = ChimeSettings(isInfinite: false, interval: .m60, schedules: [
             ChimeSchedule(start: TimeOfDay(hour: 9), end: TimeOfDay(hour: 10), weekdays: [.monday]),
         ])
         let now = date(day: 12, 8, 0)
-        settings.schedules[0].skipToday(true, at: now, calendar: calendar)
+        settings.snoozeToday(true, at: now, calendar: calendar)
         let result = requests(settings, now: now)
 
         #expect(result.map { calendar.date(from: $0.dateComponents)! } == [date(day: 19, 9, 0), date(day: 19, 10, 0)])
