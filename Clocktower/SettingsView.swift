@@ -93,8 +93,8 @@ struct SettingsView: View {
                 }
             }
         }
-        // Scrolling closes the keyboard, which ends editing and saves the message.
-        .scrollDismissesKeyboard(.interactively)
+        // Scrolling closes the keyboard as soon as it starts, which ends editing and saves the message.
+        .scrollDismissesKeyboard(.immediately)
     }
 
     /// The top section: Off / On / Schedule, and today's schedules while set to Schedule.
@@ -178,17 +178,6 @@ private struct MessageSection: View {
         Section {
             Text("Example: \(ChimeText.sample(clock: settings.clock, customMessage: draft))")
                 .foregroundStyle(.secondary)
-                // On a row rather than the Section, which would repeat them on every row.
-                .onChange(of: settings.customMessage) {
-                    if focusedField == nil { draft = settings.customMessage }
-                }
-                .onChange(of: focusedField) {
-                    if focusedField == nil { save() }
-                }
-                // Leaving the app doesn't end editing, so save then too.
-                .onChange(of: scenePhase) {
-                    if scenePhase != .active { save() }
-                }
             Picker("Clock", selection: controller.binding(\.clock)) {
                 ForEach(ClockFormat.allCases) { clock in
                     Text(clock.label).tag(clock)
@@ -196,17 +185,24 @@ private struct MessageSection: View {
             }
             .pickerStyle(.segmented)
             textField("Text before the time", text: $draft.prefix, field: .prefix)
-            textField("Text after the time", text: $draft.suffix, field: .suffix)
+            // Continues the sentence ("and stretch"), so it doesn't start with a capital.
+            textField("Text after the time", text: $draft.suffix, field: .suffix, capitalization: .never)
         } header: {
             Text("Message")
         }
     }
 
     /// A field with a clear button while it's being edited and has text, like Contacts.
-    private func textField(_ prompt: String, text: Binding<String>, field: Field) -> some View {
+    private func textField(
+        _ prompt: String,
+        text: Binding<String>,
+        field: Field,
+        capitalization: TextInputAutocapitalization = .sentences
+    ) -> some View {
         HStack {
             TextField(prompt, text: text)
                 .focused($focusedField, equals: field)
+                .textInputAutocapitalization(capitalization)
                 // Return closes the keyboard, which ends editing and saves the message.
                 .submitLabel(.done)
             if focusedField == field, !text.wrappedValue.isEmpty {
@@ -221,6 +217,19 @@ private struct MessageSection: View {
                 .buttonStyle(.borderless)
                 .accessibilityLabel("Clear")
             }
+        }
+        // On each field's row: a Form drops rows that are scrolled out of view, but the field being
+        // edited stays in view, since scrolling ends editing. Not on the Section, which would repeat
+        // them on every row. With both fields running them, save() does nothing the second time.
+        .onChange(of: settings.customMessage) {
+            if focusedField == nil { draft = settings.customMessage }
+        }
+        .onChange(of: focusedField) {
+            if focusedField == nil { save() }
+        }
+        // Leaving the app doesn't end editing, so save then too.
+        .onChange(of: scenePhase) {
+            if scenePhase != .active { save() }
         }
     }
 
