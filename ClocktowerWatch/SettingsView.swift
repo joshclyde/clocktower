@@ -31,21 +31,18 @@ struct SettingsView: View {
             }
 
             Section("Message") {
-                VStack {
-                    ForEach(MessageStyle.allCases) { style in
-                        ChoiceButton(title: ChimeText.sample(style: style, clock: settings.clock), isSelected: settings.style == style) {
-                            controller.update { $0.style = style }
-                        }
-                    }
-                }
-                .listRowBackground(Color.clear)
-            }
-
-            Section("Clock") {
                 HStack {
                     ForEach(ClockFormat.allCases) { clock in
                         ChoiceButton(title: clock.shortLabel, isSelected: settings.clock == clock) {
                             controller.update { $0.clock = clock }
+                        }
+                    }
+                }
+                .listRowBackground(Color.clear)
+                VStack {
+                    ForEach(MessageStyle.allCases) { style in
+                        ChoiceButton(title: ChimeText.sample(style: style, clock: settings.clock), isSelected: settings.style == style) {
+                            controller.update { $0.style = style }
                         }
                     }
                 }
