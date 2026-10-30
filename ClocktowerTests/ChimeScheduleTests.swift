@@ -32,7 +32,7 @@ struct ChimeScheduleTests {
     @Test func decodesSettingsSavedBeforeSchedules() throws {
         let json = #"{"isEnabled":true,"interval":30,"style":"sentence","clock":"twentyFourHour","isTimeSensitive":true}"#
         let settings = try JSONDecoder().decode(ChimeSettings.self, from: Data(json.utf8))
-        #expect(settings == ChimeSettings(interval: .m30, style: .sentence, clock: .twentyFourHour, isTimeSensitive: true))
+        #expect(settings == ChimeSettings(interval: .m30, clock: .twentyFourHour, isTimeSensitive: true))
     }
 
     @Test func schedulesRoundTrip() throws {

@@ -39,24 +39,11 @@ struct SettingsView: View {
                     }
                 }
                 .listRowBackground(Color.clear)
-                VStack {
-                    // Custom is written on the iPhone, so it's only offered once it has a message.
-                    ForEach(MessageStyle.allCases.filter { $0 != .custom || settings.customMessage.isValid }) { style in
-                        ChoiceButton(
-                            title: ChimeText.sample(style: style, clock: settings.clock, customMessage: settings.customMessage),
-                            isSelected: settings.style == style
-                        ) {
-                            controller.update { $0.style = style }
-                        }
-                    }
-                }
-                .listRowBackground(Color.clear)
+                Text(ChimeText.sample(clock: settings.clock, customMessage: settings.customMessage))
             } header: {
                 Text("Message")
             } footer: {
-                Text(settings.customMessage.isValid
-                    ? "Change your custom message on your iPhone."
-                    : "Write a custom message on your iPhone.")
+                Text("Change your message on your iPhone.")
             }
 
             Section {

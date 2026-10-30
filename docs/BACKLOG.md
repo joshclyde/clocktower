@@ -15,7 +15,7 @@ Play a voice saying the time ("It's three fifteen") as the notification sound, s
 
 Expose each setting as an action in the Shortcuts app, so chimes can be changed from a shortcut, a Focus or time-of-day automation, Siri, or the Action button (e.g. turn chimes off at bedtime, switch to 15 min during work hours).
 
-- One App Intent per setting, or a single "Set Chime Setting" intent with a parameter per field: chimes on/off, interval, message style, clock format, Time Sensitive. Enums become `AppEnum`s (`ChimeInterval`, `MessageStyle`, `ClockFormat`).
+- One App Intent per setting, or a single "Set Chime Setting" intent with a parameter per field: chimes on/off, interval, message (before / after text), clock format, Time Sensitive. Enums become `AppEnum`s (`ChimeInterval`, `ClockFormat`).
 - Probably also a "Get Chime Settings" intent so shortcuts can branch on the current values.
 - Each intent applies the change the same way `ChimeController.update` does: save to `SettingsStore`, reschedule via `ChimeScheduler`, and push to the watch with `PhoneSync`. It may run without the app in the foreground, so that path can't depend on SwiftUI state. Reload widget timelines after.
 - Register `AppShortcutsProvider` phrases so the common ones ("Turn off Clocktower chimes") work in Siri and Spotlight without the user building a shortcut.

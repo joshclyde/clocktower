@@ -8,14 +8,6 @@ enum ChimeInterval: Int, Codable, CaseIterable, Identifiable {
     var label: String { self == .m60 ? "1 hr" : "\(rawValue) min" }
 }
 
-enum MessageStyle: String, Codable, CaseIterable, Identifiable {
-    case timeOnly   // "1:20 PM"
-    case sentence   // "The time is 1:20 PM"
-    case custom     // "Stand up 1:20 PM, stretch": `ChimeSettings.customMessage` around the time
-
-    var id: Self { self }
-}
-
 enum ClockFormat: String, Codable, CaseIterable, Identifiable {
     case twelveHour     // "1:20 PM"
     case twentyFourHour // "13:20"
@@ -42,16 +34,11 @@ enum ChimeMode: CaseIterable, Identifiable {
     }
 }
 
-/// The user's own words for the `.custom` style: text before the time, after it, or both.
+/// The user's own words around the time in each chime, e.g. "Stand up" + "1:20 PM" + "and stretch".
+/// Either or both can be empty; both empty chimes just the time.
 struct CustomMessage: Codable, Equatable {
     var prefix = ""
     var suffix = ""
-
-    /// At least one of `prefix` and `suffix` has text; the editor won't save otherwise.
-    var isValid: Bool {
-        !prefix.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            || !suffix.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
 }
 
 struct ChimeSettings: Codable, Equatable {
@@ -61,8 +48,6 @@ struct ChimeSettings: Codable, Equatable {
     /// original name so saved settings still load. See `mode`.
     var isInfinite = true
     var interval: ChimeInterval = .m20
-    var style: MessageStyle = .timeOnly
-    /// Used by the `.custom` style.
     var customMessage = CustomMessage()
     var clock: ClockFormat = .twelveHour
     /// Deliver chimes as Time Sensitive so they come through a Focus.
@@ -91,7 +76,6 @@ extension ChimeSettings {
         isEnabled = try container.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? defaults.isEnabled
         isInfinite = try container.decodeIfPresent(Bool.self, forKey: .isInfinite) ?? defaults.isInfinite
         interval = try container.decodeIfPresent(ChimeInterval.self, forKey: .interval) ?? defaults.interval
-        style = try container.decodeIfPresent(MessageStyle.self, forKey: .style) ?? defaults.style
         customMessage = try container.decodeIfPresent(CustomMessage.self, forKey: .customMessage) ?? defaults.customMessage
         clock = try container.decodeIfPresent(ClockFormat.self, forKey: .clock) ?? defaults.clock
         isTimeSensitive = try container.decodeIfPresent(Bool.self, forKey: .isTimeSensitive) ?? defaults.isTimeSensitive

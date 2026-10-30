@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Writes the custom message: text before the time, after it, or both, with an example of the
-/// result. Saves only when at least one has text.
+/// Writes the custom message: text before the time, after it, both, or neither, with an example
+/// of the result.
 struct CustomMessageEditor: View {
     @Environment(\.dismiss) private var dismiss
     @State private var message: CustomMessage
@@ -27,12 +27,11 @@ struct CustomMessageEditor: View {
                 } header: {
                     Text("Text around the time")
                 } footer: {
-                    Text("Fill in one or both.")
+                    Text("Both are optional. Leave them empty to show just the time.")
                 }
 
                 Section("Example") {
-                    Text(ChimeText.message(hour: 13, minute: 20, style: .custom, clock: clock, customMessage: message))
-                        .foregroundStyle(message.isValid ? Color.primary : Color.secondary)
+                    Text(ChimeText.sample(clock: clock, customMessage: message))
                 }
             }
             .navigationTitle("Custom Message")
@@ -46,7 +45,6 @@ struct CustomMessageEditor: View {
                         onSave(message)
                         dismiss()
                     }
-                    .disabled(!message.isValid)
                 }
             }
         }

@@ -21,10 +21,7 @@ struct SettingsView: View {
             .navigationTitle("Clocktower")
             .sheet(isPresented: $isEditingMessage) {
                 CustomMessageEditor(message: settings.customMessage, clock: settings.clock) { message in
-                    controller.update { settings in
-                        settings.customMessage = message
-                        settings.style = .custom
-                    }
+                    controller.update { $0.customMessage = message }
                 }
             }
             .sheet(item: $editing) { schedule in
@@ -133,40 +130,27 @@ struct SettingsView: View {
         }
     }
 
-    /// The clock format and message styles. Custom chooses the custom message, or opens the editor
-    /// while there isn't one yet; Edit next to it changes the message.
+    /// The clock format, and the message with an Edit button that opens the editor.
     private var messageSection: some View {
-        Section {
+        Section("Message") {
             Picker("Clock", selection: controller.binding(\.clock)) {
                 ForEach(ClockFormat.allCases) { clock in
                     Text(clock.label).tag(clock)
                 }
             }
             .pickerStyle(.segmented)
-            VStack {
-                ForEach(MessageStyle.allCases) { style in
-                    HStack {
-                        ChoiceButton(
-                            title: ChimeText.sample(style: style, clock: settings.clock, customMessage: settings.customMessage),
-                            isSelected: settings.style == style
-                        ) {
-                            if style == .custom, !settings.customMessage.isValid {
-                                isEditingMessage = true
-                            } else {
-                                controller.update { $0.style = style }
-                            }
-                        }
-                        if style == .custom, settings.customMessage.isValid {
-                            // Borderless keeps it tappable on its own inside the Form row.
-                            Button("Edit") { isEditingMessage = true }
-                                .buttonStyle(.borderless)
-                                .accessibilityLabel("Edit Custom Message")
-                        }
-                    }
+            HStack {
+                Text(ChimeText.sample(clock: settings.clock, customMessage: settings.customMessage))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                // Borderless keeps it tappable on its own inside the Form row.
+                Button {
+                    isEditingMessage = true
+                } label: {
+                    Image(systemName: "pencil")
                 }
+                .buttonStyle(.borderless)
+                .accessibilityLabel("Edit Message")
             }
-        } header: {
-            Text("Message")
         }
     }
 
