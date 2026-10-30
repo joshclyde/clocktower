@@ -4,15 +4,6 @@ struct SettingsView: View {
     @Environment(ChimeController.self) private var controller
     /// The schedule open in the editor sheet; new ones aren't in `settings.schedules` until added.
     @State private var editing: ChimeSchedule?
-    /// The Before and After text while typing. Saved when editing ends rather than on every
-    /// keystroke, since each save reschedules every chime and syncs the watch.
-    @State private var messageDraft = CustomMessage()
-    @FocusState private var messageField: MessageField?
-    @Environment(\.scenePhase) private var scenePhase
-
-    private enum MessageField {
-        case prefix, suffix
-    }
 
     private var settings: ChimeSettings { controller.settings }
     private let notificationSettingsURL = URL(string: UIApplication.openNotificationSettingsURLString)!
@@ -27,17 +18,6 @@ struct SettingsView: View {
                 form(now: context.date)
             }
             .navigationTitle("Clocktower")
-            .onAppear { messageDraft = settings.customMessage }
-            .onChange(of: settings.customMessage) {
-                if messageField == nil { messageDraft = settings.customMessage }
-            }
-            .onChange(of: messageField) {
-                if messageField == nil { saveMessage() }
-            }
-            // Leaving the app doesn't end editing, so save then too.
-            .onChange(of: scenePhase) {
-                if scenePhase != .active { saveMessage() }
-            }
             .sheet(item: $editing) { schedule in
                 ScheduleEditor(
                     schedule: schedule,
@@ -80,7 +60,7 @@ struct SettingsView: View {
                 }
             }
 
-            messageSection
+            MessageSection(message: settings.customMessage)
 
             Section {
                 Toggle(isOn: controller.binding(\.isTimeSensitive)) {
@@ -146,51 +126,6 @@ struct SettingsView: View {
         }
     }
 
-    /// An example of the whole message (updating while typing), the clock format, and optional text
-    /// before and after the time.
-    private var messageSection: some View {
-        Section {
-            Text("Example: \(ChimeText.sample(clock: settings.clock, customMessage: messageDraft))")
-                .foregroundStyle(.secondary)
-            Picker("Clock", selection: controller.binding(\.clock)) {
-                ForEach(ClockFormat.allCases) { clock in
-                    Text(clock.label).tag(clock)
-                }
-            }
-            .pickerStyle(.segmented)
-            messageTextField("Text before the time", text: $messageDraft.prefix, field: .prefix)
-            messageTextField("Text after the time", text: $messageDraft.suffix, field: .suffix)
-        } header: {
-            Text("Message")
-        }
-    }
-
-    /// A message field with a clear button while it's being edited and has text, like Contacts.
-    private func messageTextField(_ prompt: String, text: Binding<String>, field: MessageField) -> some View {
-        HStack {
-            TextField(prompt, text: text)
-                .focused($messageField, equals: field)
-                // Return closes the keyboard, which ends editing and saves the message.
-                .submitLabel(.done)
-            if messageField == field, !text.wrappedValue.isEmpty {
-                Button {
-                    text.wrappedValue = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.tertiary)
-                }
-                // Borderless keeps it tappable on its own inside the Form row.
-                .buttonStyle(.borderless)
-                .accessibilityLabel("Clear")
-            }
-        }
-    }
-
-    private func saveMessage() {
-        guard messageDraft != settings.customMessage else { return }
-        controller.update { $0.customMessage = messageDraft }
-    }
-
     private var schedulesSection: some View {
         Section {
             ForEach(settings.schedules) { schedule in
@@ -215,6 +150,83 @@ struct SettingsView: View {
                 ? "Chimes only during these windows."
                 : "Choose Schedule above to chime only during these windows.")
         }
+    }
+}
+
+/// The Message section: an example of the whole message (updating while typing), the clock format,
+/// and optional text before and after the time. Keeps the text being typed to itself, so each
+/// keystroke redraws only this section rather than the whole page.
+private struct MessageSection: View {
+    @Environment(ChimeController.self) private var controller
+    @Environment(\.scenePhase) private var scenePhase
+    /// The text while typing. Saved when editing ends rather than on every keystroke, since each
+    /// save reschedules every chime and syncs the watch.
+    @State private var draft: CustomMessage
+    @FocusState private var focusedField: Field?
+
+    private enum Field {
+        case prefix, suffix
+    }
+
+    private var settings: ChimeSettings { controller.settings }
+
+    init(message: CustomMessage) {
+        _draft = State(initialValue: message)
+    }
+
+    var body: some View {
+        Section {
+            Text("Example: \(ChimeText.sample(clock: settings.clock, customMessage: draft))")
+                .foregroundStyle(.secondary)
+                // On a row rather than the Section, which would repeat them on every row.
+                .onChange(of: settings.customMessage) {
+                    if focusedField == nil { draft = settings.customMessage }
+                }
+                .onChange(of: focusedField) {
+                    if focusedField == nil { save() }
+                }
+                // Leaving the app doesn't end editing, so save then too.
+                .onChange(of: scenePhase) {
+                    if scenePhase != .active { save() }
+                }
+            Picker("Clock", selection: controller.binding(\.clock)) {
+                ForEach(ClockFormat.allCases) { clock in
+                    Text(clock.label).tag(clock)
+                }
+            }
+            .pickerStyle(.segmented)
+            textField("Text before the time", text: $draft.prefix, field: .prefix)
+            textField("Text after the time", text: $draft.suffix, field: .suffix)
+        } header: {
+            Text("Message")
+        }
+    }
+
+    /// A field with a clear button while it's being edited and has text, like Contacts.
+    private func textField(_ prompt: String, text: Binding<String>, field: Field) -> some View {
+        HStack {
+            TextField(prompt, text: text)
+                .focused($focusedField, equals: field)
+                // Return closes the keyboard, which ends editing and saves the message.
+                .submitLabel(.done)
+            if focusedField == field, !text.wrappedValue.isEmpty {
+                Button {
+                    text.wrappedValue = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        // The light gray of the system clear button.
+                        .foregroundStyle(Color(.tertiaryLabel))
+                }
+                // Borderless keeps it tappable on its own inside the Form row.
+                .buttonStyle(.borderless)
+                .accessibilityLabel("Clear")
+            }
+        }
+    }
+
+    private func save() {
+        guard draft != settings.customMessage else { return }
+        controller.update { $0.customMessage = draft }
     }
 }
 
