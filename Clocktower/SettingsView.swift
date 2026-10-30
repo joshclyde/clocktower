@@ -133,7 +133,8 @@ struct SettingsView: View {
         }
     }
 
-    /// The clock format and message styles. Custom opens the editor, and is chosen once its message is saved.
+    /// The clock format and message styles. Custom chooses the custom message, or opens the editor
+    /// while there isn't one yet; Edit next to it changes the message.
     private var messageSection: some View {
         Section {
             Picker("Clock", selection: controller.binding(\.clock)) {
@@ -144,24 +145,28 @@ struct SettingsView: View {
             .pickerStyle(.segmented)
             VStack {
                 ForEach(MessageStyle.allCases) { style in
-                    ChoiceButton(
-                        title: ChimeText.sample(style: style, clock: settings.clock, customMessage: settings.customMessage),
-                        isSelected: settings.style == style
-                    ) {
-                        if style == .custom {
-                            isEditingMessage = true
-                        } else {
-                            controller.update { $0.style = style }
+                    HStack {
+                        ChoiceButton(
+                            title: ChimeText.sample(style: style, clock: settings.clock, customMessage: settings.customMessage),
+                            isSelected: settings.style == style
+                        ) {
+                            if style == .custom, !settings.customMessage.isValid {
+                                isEditingMessage = true
+                            } else {
+                                controller.update { $0.style = style }
+                            }
+                        }
+                        if style == .custom, settings.customMessage.isValid {
+                            // Borderless keeps it tappable on its own inside the Form row.
+                            Button("Edit") { isEditingMessage = true }
+                                .buttonStyle(.borderless)
+                                .accessibilityLabel("Edit Custom Message")
                         }
                     }
                 }
             }
         } header: {
             Text("Message")
-        } footer: {
-            if settings.style == .custom {
-                Text("Tap your message to change it.")
-            }
         }
     }
 
