@@ -4,7 +4,15 @@ struct SettingsView: View {
     @Environment(ChimeController.self) private var controller
     /// The schedule open in the editor sheet; new ones aren't in `settings.schedules` until added.
     @State private var editing: ChimeSchedule?
-    @State private var isEditingMessage = false
+    /// The Before and After text while typing. Saved when editing ends rather than on every
+    /// keystroke, since each save reschedules every chime and syncs the watch.
+    @State private var messageDraft = CustomMessage()
+    @FocusState private var messageField: MessageField?
+    @Environment(\.scenePhase) private var scenePhase
+
+    private enum MessageField {
+        case prefix, suffix
+    }
 
     private var settings: ChimeSettings { controller.settings }
     private let notificationSettingsURL = URL(string: UIApplication.openNotificationSettingsURLString)!
@@ -19,10 +27,16 @@ struct SettingsView: View {
                 form(now: context.date)
             }
             .navigationTitle("Clocktower")
-            .sheet(isPresented: $isEditingMessage) {
-                CustomMessageEditor(message: settings.customMessage, clock: settings.clock) { message in
-                    controller.update { $0.customMessage = message }
-                }
+            .onAppear { messageDraft = settings.customMessage }
+            .onChange(of: settings.customMessage) {
+                if messageField == nil { messageDraft = settings.customMessage }
+            }
+            .onChange(of: messageField) {
+                if messageField == nil { saveMessage() }
+            }
+            // Leaving the app doesn't end editing, so save then too.
+            .onChange(of: scenePhase) {
+                if scenePhase != .active { saveMessage() }
             }
             .sheet(item: $editing) { schedule in
                 ScheduleEditor(
@@ -130,28 +144,34 @@ struct SettingsView: View {
         }
     }
 
-    /// The clock format, and the message with an Edit button that opens the editor.
+    /// The clock format, and the optional text before and after the time, with an example that
+    /// updates while typing.
     private var messageSection: some View {
-        Section("Message") {
+        Section {
             Picker("Clock", selection: controller.binding(\.clock)) {
                 ForEach(ClockFormat.allCases) { clock in
                     Text(clock.label).tag(clock)
                 }
             }
             .pickerStyle(.segmented)
-            HStack {
-                Text(ChimeText.sample(clock: settings.clock, customMessage: settings.customMessage))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                // Borderless keeps it tappable on its own inside the Form row.
-                Button {
-                    isEditingMessage = true
-                } label: {
-                    Image(systemName: "pencil")
-                }
-                .buttonStyle(.borderless)
-                .accessibilityLabel("Edit Message")
+            LabeledContent("Before") {
+                TextField("Before", text: $messageDraft.prefix, prompt: Text("e.g. Stand up"))
+                    .focused($messageField, equals: .prefix)
             }
+            LabeledContent("After") {
+                TextField("After", text: $messageDraft.suffix, prompt: Text("e.g. and stretch"))
+                    .focused($messageField, equals: .suffix)
+            }
+        } header: {
+            Text("Message")
+        } footer: {
+            Text("Example: \(ChimeText.sample(clock: settings.clock, customMessage: messageDraft))")
         }
+    }
+
+    private func saveMessage() {
+        guard messageDraft != settings.customMessage else { return }
+        controller.update { $0.customMessage = messageDraft }
     }
 
     private var schedulesSection: some View {
