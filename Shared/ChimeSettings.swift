@@ -53,6 +53,8 @@ struct ChimeSettings: Codable, Equatable {
     /// Deliver chimes as Time Sensitive so they come through a Focus.
     var isTimeSensitive = false
     var schedules: [ChimeSchedule] = []
+    /// Set to the next midnight by Snooze Today, so schedules resume by themselves.
+    var snoozedUntil: Date?
 }
 
 extension ChimeSettings {
@@ -80,6 +82,7 @@ extension ChimeSettings {
         clock = try container.decodeIfPresent(ClockFormat.self, forKey: .clock) ?? defaults.clock
         isTimeSensitive = try container.decodeIfPresent(Bool.self, forKey: .isTimeSensitive) ?? defaults.isTimeSensitive
         schedules = try container.decodeIfPresent([ChimeSchedule].self, forKey: .schedules) ?? defaults.schedules
+        snoozedUntil = try container.decodeIfPresent(Date.self, forKey: .snoozedUntil)
     }
 }
 

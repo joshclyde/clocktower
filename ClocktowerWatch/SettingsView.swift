@@ -59,17 +59,23 @@ struct SettingsView: View {
             } footer: {
                 Text("Chimes come through even when a Focus is on.")
             }
-
-            schedulesSection
         }
     }
 
-    /// The top section: Off / On / Schedule, and today's schedules while set to Schedule.
+    /// The top section: Off / On / Schedule and, while set to Schedule, today's schedules, Snooze
+    /// Today, and each schedule's toggle. Adding and editing schedules is on the iPhone.
     private func onOffSection(now: Date) -> some View {
-        let today = settings.mode == .schedule ? settings.todaysSchedules(at: now, calendar: .current) : []
+        let isScheduled = settings.mode == .schedule
+        let today = isScheduled ? settings.todaysSchedules(at: now, calendar: .current) : []
+        let isSnoozed = settings.isSnoozed(at: now)
+        // Only while a window is left today, or to end a snooze.
+        let showsSnooze = isSnoozed || today.contains { !$0.hasEnded(at: now, calendar: .current) }
         var footer = ChimeText.appDescription(for: settings)
-        if !today.isEmpty {
-            footer += "\n\nTurning one off lasts until midnight."
+        if showsSnooze {
+            footer += "\n\nSnooze Today lasts until midnight."
+        }
+        if isScheduled {
+            footer += "\n\nAdd and edit schedules on your iPhone."
         }
         return Section {
             HStack {
@@ -80,27 +86,31 @@ struct SettingsView: View {
                 }
             }
             .listRowBackground(Color.clear)
-            ForEach(today) { schedule in
-                let window = ChimeText.window(of: schedule, clock: settings.clock)
-                if schedule.hasEnded(at: now, calendar: .current) {
+            if isScheduled {
+                ForEach(today) { schedule in
+                    let hasEnded = schedule.hasEnded(at: now, calendar: .current)
                     VStack(alignment: .leading) {
-                        Text(window)
-                        Text(schedule.isSkipped(at: now) ? "Today · Skipped" : "Today · Done")
+                        Text(ChimeText.window(of: schedule, clock: settings.clock))
+                        Text(isSnoozed ? "Today · Snoozed" : hasEnded ? "Today · Done" : "Today")
                             .font(.footnote)
+                            .foregroundStyle(.secondary)
                     }
-                    .foregroundStyle(.secondary)
-                } else {
+                    .foregroundStyle(isSnoozed || hasEnded ? HierarchicalShapeStyle.secondary : .primary)
+                }
+                if showsSnooze {
+                    Toggle("Snooze Today", isOn: Binding(
+                        get: { isSnoozed },
+                        set: { snooze in controller.update { $0.snoozeToday(snooze, at: .now, calendar: .current) } }
+                    ))
+                }
+                ForEach(settings.schedules) { schedule in
                     Toggle(isOn: Binding(
-                        get: { !schedule.isSkipped(at: now) },
-                        set: { isOn in
-                            controller.update { settings in
-                                settings.updateSchedule(schedule.id) { $0.skipToday(!isOn, at: .now, calendar: .current) }
-                            }
-                        }
+                        get: { schedule.isEnabled },
+                        set: { isOn in controller.update { settings in settings.updateSchedule(schedule.id) { $0.isEnabled = isOn } } }
                     )) {
                         VStack(alignment: .leading) {
-                            Text(window)
-                            Text("Today")
+                            Text(ChimeText.window(of: schedule, clock: settings.clock))
+                            Text(ChimeText.days(schedule.weekdays))
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                         }
@@ -111,31 +121,6 @@ struct SettingsView: View {
             Text("Chimes")
         } footer: {
             Text(footer)
-        }
-    }
-
-    /// Each schedule can be turned on and off here; adding and editing them is on the iPhone.
-    private var schedulesSection: some View {
-        Section {
-            ForEach(settings.schedules) { schedule in
-                Toggle(isOn: Binding(
-                    get: { schedule.isEnabled },
-                    set: { isOn in controller.update { settings in settings.updateSchedule(schedule.id) { $0.isEnabled = isOn } } }
-                )) {
-                    VStack(alignment: .leading) {
-                        Text(ChimeText.window(of: schedule, clock: settings.clock))
-                        Text(ChimeText.days(schedule.weekdays))
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-        } header: {
-            Text("Schedules")
-        } footer: {
-            Text(settings.mode == .schedule
-                ? "Add and edit schedules on your iPhone."
-                : "Choose Schedule to use these. Add and edit schedules on your iPhone.")
         }
     }
 }

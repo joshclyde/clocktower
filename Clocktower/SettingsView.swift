@@ -89,8 +89,6 @@ struct SettingsView: View {
                 Text("Chimes come through even when a Focus is on.")
             }
 
-            schedulesSection
-
             if notificationsOn {
                 Section("Tips") {
                     TipRow("Notifications are on for Clocktower.", systemImage: "bell.badge", isGood: true) {
@@ -112,12 +110,17 @@ struct SettingsView: View {
         }
     }
 
-    /// The top section: Off / On / Schedule, and today's schedules while set to Schedule.
+    /// The top section: Off / On / Schedule and, while set to Schedule, today's schedules, Snooze
+    /// Today, and every schedule.
     private func onOffSection(now: Date) -> some View {
-        let today = settings.mode == .schedule ? settings.todaysSchedules(at: now, calendar: .current) : []
+        let isScheduled = settings.mode == .schedule
+        let today = isScheduled ? settings.todaysSchedules(at: now, calendar: .current) : []
+        let isSnoozed = settings.isSnoozed(at: now)
+        // Only while a window is left today, or to end a snooze.
+        let showsSnooze = isSnoozed || today.contains { !$0.hasEnded(at: now, calendar: .current) }
         var footer = ChimeText.appDescription(for: settings)
-        if !today.isEmpty {
-            footer += "\n\nTurning off one of today's schedules lasts until midnight."
+        if showsSnooze {
+            footer += "\n\nSnooze Today lasts until midnight."
         }
         return Section {
             HStack {
@@ -127,11 +130,32 @@ struct SettingsView: View {
                     }
                 }
             }
-            ForEach(today) { schedule in
-                TodayRow(schedule: schedule, clock: settings.clock, now: now) { skip in
-                    controller.update { settings in
-                        settings.updateSchedule(schedule.id) { $0.skipToday(skip, at: .now, calendar: .current) }
+            if isScheduled {
+                ForEach(today) { schedule in
+                    TodayRow(schedule: schedule, clock: settings.clock, now: now, isSnoozed: isSnoozed)
+                }
+                if showsSnooze {
+                    Toggle(isOn: Binding(
+                        get: { isSnoozed },
+                        set: { snooze in controller.update { $0.snoozeToday(snooze, at: .now, calendar: .current) } }
+                    )) {
+                        Label("Snooze Today", systemImage: "moon.zzz")
                     }
+                }
+                ForEach(settings.schedules) { schedule in
+                    ScheduleRow(schedule: schedule, clock: settings.clock) {
+                        editing = schedule
+                    } setEnabled: { isOn in
+                        controller.update { settings in settings.updateSchedule(schedule.id) { $0.isEnabled = isOn } }
+                    }
+                }
+                .onDelete { offsets in
+                    controller.update { settings in settings.schedules.remove(atOffsets: offsets) }
+                }
+                Button {
+                    editing = ChimeSchedule()
+                } label: {
+                    Label("Add Schedule", systemImage: "plus")
                 }
             }
         } header: {
@@ -140,73 +164,41 @@ struct SettingsView: View {
             Text(footer)
         }
     }
-
-    private var schedulesSection: some View {
-        Section {
-            ForEach(settings.schedules) { schedule in
-                ScheduleRow(schedule: schedule, clock: settings.clock) {
-                    editing = schedule
-                } setEnabled: { isOn in
-                    controller.update { settings in settings.updateSchedule(schedule.id) { $0.isEnabled = isOn } }
-                }
-            }
-            .onDelete { offsets in
-                controller.update { settings in settings.schedules.remove(atOffsets: offsets) }
-            }
-            Button {
-                editing = ChimeSchedule()
-            } label: {
-                Label("Add Schedule", systemImage: "plus")
-            }
-        } header: {
-            Text("Schedules")
-        } footer: {
-            Text(settings.mode == .schedule
-                ? "Chimes only during these windows."
-                : "Choose Schedule above to chime only during these windows.")
-        }
-    }
 }
 
-/// One of today's schedules: a toggle that turns it off until midnight, or Done / Skipped once its
+/// One of today's schedules, for display: Snoozed while Snooze Today is on, and Done once its
 /// window has passed.
 private struct TodayRow: View {
     let schedule: ChimeSchedule
     let clock: ClockFormat
     let now: Date
-    let skipToday: (Bool) -> Void
+    let isSnoozed: Bool
 
     var body: some View {
-        if schedule.hasEnded(at: now, calendar: .current) {
-            let skipped = schedule.isSkipped(at: now)
-            LabeledContent {
-                Label(skipped ? "Skipped" : "Done", systemImage: skipped ? "slash.circle" : "checkmark.circle")
-            } label: {
-                title
+        let hasEnded = schedule.hasEnded(at: now, calendar: .current)
+        LabeledContent {
+            if isSnoozed {
+                Label("Snoozed", systemImage: "moon.zzz")
+            } else if hasEnded {
+                Label("Done", systemImage: "checkmark.circle")
             }
-            .foregroundStyle(.secondary)
-        } else {
-            Toggle(isOn: Binding(get: { !schedule.isSkipped(at: now) }, set: { isOn in skipToday(!isOn) })) {
-                title
+        } label: {
+            Label {
+                VStack(alignment: .leading) {
+                    Text(ChimeText.window(of: schedule, clock: clock))
+                    Text("Today")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            } icon: {
+                Image(systemName: "calendar")
             }
         }
-    }
-
-    private var title: some View {
-        Label {
-            VStack(alignment: .leading) {
-                Text(ChimeText.window(of: schedule, clock: clock))
-                Text("Today")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-        } icon: {
-            Image(systemName: "calendar")
-        }
+        .foregroundStyle(isSnoozed || hasEnded ? HierarchicalShapeStyle.secondary : .primary)
     }
 }
 
-/// A schedule in the Schedules section: tap to edit, with its own on/off toggle.
+/// A schedule in the Chimes section: tap to edit, with its own on/off toggle.
 private struct ScheduleRow: View {
     let schedule: ChimeSchedule
     let clock: ClockFormat

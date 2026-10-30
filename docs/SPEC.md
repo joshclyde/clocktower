@@ -6,13 +6,14 @@ Notifications at clock-aligned intervals, e.g. every 15 min → 1:00, 1:15, 1:30
 
 | Surface | Behavior |
 | --- | --- |
-| iOS app | Top to bottom: a **Chimes** section with an **Off / On / Schedule** choice (three buttons, filled red / green / blue when selected) and **Today** (see below), with a description under it: the interval and 3 example times in the chosen clock format (e.g. "Get notifications every 5 minutes, all day." / "Example: 1:00 PM, 1:05 PM, 1:10 PM"; "… during your schedules." for Schedule), "No chimes scheduled. Choose On or turn on a schedule.", or "Chimes are off." · interval buttons **5 / 10 / 15 / 20 / 30 / 60 min** (single select) · message **"1:20 PM"** or **"The time is 1:20 PM"** · clock **12-hour / 24-hour** · **Time Sensitive** toggle · **Schedules** (see below) · Tips |
-| watchOS app | Same controls as iOS, except schedules: each schedule's toggle, but adding and editing schedules is on the iPhone. No Tips |
+| iOS app | Top to bottom: a **Chimes** section with an **Off / On / Schedule** choice (three buttons, filled red / green / blue when selected) and, while set to Schedule, **Today**, **Snooze Today**, and **Schedules** (see below), with a description under it: the interval and 3 example times in the chosen clock format (e.g. "Get notifications every 5 minutes, all day." / "Example: 1:00 PM, 1:05 PM, 1:10 PM"; "… during your schedules." for Schedule), "No chimes scheduled. Choose On or turn on a schedule.", or "Chimes are off." · interval buttons **5 / 10 / 15 / 20 / 30 / 60 min** (single select) · message **"1:20 PM"** or **"The time is 1:20 PM"** · clock **12-hour / 24-hour** · **Time Sensitive** toggle · Tips |
+| watchOS app | Same controls as iOS, except schedules: each schedule's toggle, but adding and editing schedules is on the iPhone (the footer says so). No Tips |
 | iOS widget | Bell icon and text show Off vs. on (On or Schedule) (display only); tap opens the app |
 | watchOS complication | Bell icon shows Off vs. on (`bell.slash` / `bell.fill`); tap opens the watch app |
 
-- **Today**: rows under Off / On / Schedule for the active schedules on today's weekday, by start time ("9:00 AM – 5:00 PM" / "Today"), shown only while set to Schedule. A window that hasn't passed has a toggle that turns that schedule off for the rest of today; once it has passed it shows **Done** (or **Skipped**, if turned off) and no toggle. The footer adds that turning one off lasts until midnight. Refreshes every minute.
-- **Schedules** has one row per schedule ("9:00 AM – 5:00 PM" / "Weekdays") with its own toggle, and **Add Schedule**. Tapping a row opens the editor: start time, end time, and day buttons S M T W T F S (all selected for a new schedule). Either time can be set freely. An end at or before the start turns the End label red with "End time must be after the start time." under it, and no days shows "Select at least one day."; Save (Add) stays disabled until both are fixed. Delete from the editor or by swiping the row.
+- **Today**: display-only rows under Off / On / Schedule for the active schedules on today's weekday, by start time ("9:00 AM – 5:00 PM" / "Today"). Shows **Snoozed** while snoozed, else **Done** once the window has passed. Individual schedules can't be turned off for today. Refreshes every minute.
+- **Snooze Today**: a toggle under Today that stops every schedule for the rest of today; turning it off resumes them. Shown while a window is left today, or while snoozed. The footer adds that it lasts until midnight. It doesn't affect On.
+- **Schedules**: under Snooze Today, one row per schedule ("9:00 AM – 5:00 PM" / "Weekdays") with its own toggle, and **Add Schedule**. Tapping a row opens the editor: start time, end time, and day buttons S M T W T F S (all selected for a new schedule). Either time can be set freely. An end at or before the start turns the End label red with "End time must be after the start time." under it, and no days shows "Select at least one day."; Save (Add) stays disabled until both are fixed. Delete from the editor or by swiping the row.
 - Chimes land on clock boundaries (20 min → :00, :20, :40), not relative to when enabled.
 - Defaults: **On, 20 min, "1:20 PM", 12-hour, Time Sensitive off, no schedules**.
 - Notification permission is requested on first launch. If denied, the app shows a banner linking to Settings.
@@ -35,7 +36,6 @@ struct ChimeSchedule: Codable, Equatable, Identifiable {
     var start = TimeOfDay(hour: 9)
     var end = TimeOfDay(hour: 17)            // inclusive; after start
     var weekdays = Set(Weekday.allCases)     // at least one
-    var skippedUntil: Date?                  // turned off for today → the next midnight
 }
 
 enum ChimeMode { case off, on, schedule }  // the UI's Off / On / Schedule; ChimeSettings.mode maps it onto isEnabled + isInfinite
@@ -48,6 +48,7 @@ struct ChimeSettings: Codable, Equatable {
     var clock: ClockFormat = .twelveHour
     var isTimeSensitive = false
     var schedules: [ChimeSchedule] = []
+    var snoozedUntil: Date?       // Snooze Today → the next midnight
 }
 ```
 
@@ -61,17 +62,17 @@ struct ChimeSettings: Codable, Equatable {
 chimes(at date):
   if !isEnabled:  false                              // Off: nothing, whatever else is set
   if isInfinite:  true                               // On: every slot, every day; schedules ignored
+  if date < snoozedUntil: false                      // Snooze Today
   any schedule where
       schedule.isEnabled                             // "active" schedules
       && date's weekday in schedule.weekdays
       && start <= time <= end                        // a chime at the end time fires
-      && !(date < schedule.skippedUntil)             // not turned off for today
 ```
 
 - Slots are still clock-aligned (20 min → :00, :20, :40). A window that starts off a boundary chimes from the next one (9:10 → 9:20).
 - `end` is always after `start`, and a schedule has at least one day; the editor won't save otherwise. Schedules saved before the end time was required load with 11:59 PM (they ran until midnight), and ones with no days load with every day.
-- Overlapping schedules chime once per slot. Turning one off for today leaves the slots the other covers.
-- Turning a schedule off for today sets `skippedUntil` to the next midnight, so it turns itself back on; turning it back on clears it.
+- Overlapping schedules chime once per slot.
+- Snooze Today sets `snoozedUntil` to the next midnight, so schedules resume by themselves; turning it off clears it. Per-schedule `skippedUntil` from earlier builds is ignored when loading.
 - Schedule with no active schedules means no chimes. The Chimes description says so: "No chimes scheduled. Choose On or turn on a schedule."
 
 ## Notification scheduling
@@ -86,7 +87,7 @@ reschedule(settings):
   repeating = for each slot:
       chimes every weekday  → one daily request (hour + minute)
       chimes on some days   → one weekly request per day (weekday + hour + minute)
-  if repeating.count <= 64 and no schedule turned off for today would still chime before midnight:
+  if repeating.count <= 64 and the snooze doesn't drop a chime before midnight:
       schedule repeating                                   → never runs out
   else:
       next 64 slots from now that fire, one-shot (looking up to 14 days ahead)
@@ -99,11 +100,11 @@ reschedule(settings):
 | On, 5 / 10 / 15 / 20 min | 64 one-shots → ~5 / ~11 / ~16 / ~21 h of coverage |
 | Mon–Fri 9 AM–5 PM + Sat–Sun 10 AM–11:59 PM, 30 min | 51 repeating: 15 daily (10 AM–5 PM), 10 weekly (9:00, 9:30 on weekdays), 26 weekly (5:30–11:30 PM on weekends) |
 | Same, 20 min, at Thu 2:10 PM | 64 one-shots: Thu 2:20 PM … Sat 7:40 PM |
-| Same, 30 min, Mon–Fri turned off for today at Thu 2:10 PM | 64 one-shots from Fri 9:00 AM … Sun 7:00 PM; back to 51 repeating at the first refresh after midnight |
-| Same, turned off for today at Thu 6:00 PM | 51 repeating: today's window has passed, so nothing changes |
+| Same, 30 min, snoozed at Thu 2:10 PM | 64 one-shots from Fri 9:00 AM … Sun 7:00 PM; back to 51 repeating at the first refresh after midnight |
+| Same, snoozed at Thu 6:00 PM | 51 repeating: today's window has passed, so nothing changes |
 | Schedule, no active schedules | none |
 
-- A repeating request can't skip one day, so a schedule turned off for today switches to one-shots until midnight.
+- A repeating request can't skip one day, so Snooze Today switches to one-shots until midnight.
 - Content: body = message (e.g. "1:20"); iOS hides notifications with an empty body. The last one-shot chime uses title = message, body = "Open Clocktower to keep chimes going".
 - IDs: `chime-HHmm` per time of day, so a new delivery replaces the uncleared one from the day before in Notification Center instead of piling up (to confirm on device). Weekly requests add the weekday (`chime-0900-2` = Mondays 9:00), so they replace last week's. A one-shot time of day that comes up again within the 64 adds the date (`chime-1420-20260116`).
 - Refill (one-shots): on app launch/foreground, any settings change, background app refresh (best-effort), watch message.

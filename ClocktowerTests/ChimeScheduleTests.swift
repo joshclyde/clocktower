@@ -36,9 +36,9 @@ struct ChimeScheduleTests {
     }
 
     @Test func schedulesRoundTrip() throws {
-        var schedule = ChimeSchedule(start: TimeOfDay(hour: 10), end: .lastMinute, weekdays: [.saturday, .sunday])
-        schedule.skipToday(true, at: date(14), calendar: calendar)
-        let settings = ChimeSettings(isInfinite: false, schedules: [schedule, ChimeSchedule(isEnabled: false)])
+        let schedule = ChimeSchedule(start: TimeOfDay(hour: 10), end: .lastMinute, weekdays: [.saturday, .sunday])
+        var settings = ChimeSettings(isInfinite: false, schedules: [schedule, ChimeSchedule(isEnabled: false)])
+        settings.snoozeToday(true, at: date(14), calendar: calendar)
 
         let decoded = try JSONDecoder().decode(ChimeSettings.self, from: JSONEncoder().encode(settings))
         #expect(decoded == settings)
@@ -104,16 +104,16 @@ struct ChimeScheduleTests {
         #expect(!ChimeSchedule(weekdays: []).isValid)
     }
 
-    @Test func skippingTodayLastsUntilMidnight() {
-        var schedule = ChimeSchedule()
-        schedule.skipToday(true, at: date(14, 10), calendar: calendar)
-        #expect(schedule.skippedUntil == date(day: 16, 0))
-        #expect(schedule.isSkipped(at: date(23, 59)))
-        #expect(!schedule.isSkipped(at: date(day: 16, 0)))
+    @Test func snoozingTodayLastsUntilMidnight() {
+        var settings = scheduled(ChimeSchedule())
+        settings.snoozeToday(true, at: date(14, 10), calendar: calendar)
+        #expect(settings.snoozedUntil == date(day: 16, 0))
+        #expect(settings.isSnoozed(at: date(23, 59)))
+        #expect(!settings.isSnoozed(at: date(day: 16, 0)))
 
-        schedule.skipToday(false, at: date(14, 20), calendar: calendar)
-        #expect(schedule.skippedUntil == nil)
-        #expect(!schedule.isSkipped(at: date(14, 30)))
+        settings.snoozeToday(false, at: date(14, 20), calendar: calendar)
+        #expect(settings.snoozedUntil == nil)
+        #expect(!settings.isSnoozed(at: date(14, 30)))
     }
 
     // MARK: Which chimes fire
@@ -130,7 +130,7 @@ struct ChimeScheduleTests {
     @Test func infiniteIgnoresSchedules() {
         var settings = scheduled(ChimeSchedule(start: TimeOfDay(hour: 9), end: TimeOfDay(hour: 10)))
         settings.isInfinite = true
-        settings.schedules[0].skipToday(true, at: date(8), calendar: calendar)
+        settings.snoozeToday(true, at: date(8), calendar: calendar)
         #expect(settings.chimes(at: date(3), calendar: calendar))
         #expect(settings.chimes(at: date(9, 30), calendar: calendar))
     }
@@ -155,24 +155,17 @@ struct ChimeScheduleTests {
         #expect(settings.activeSchedules.isEmpty)
     }
 
-    @Test func skippedScheduleResumesTomorrow() {
-        var settings = scheduled(ChimeSchedule(start: TimeOfDay(hour: 9), end: TimeOfDay(hour: 17)))
-        settings.schedules[0].skipToday(true, at: date(14, 10), calendar: calendar)
+    @Test func snoozedSchedulesResumeTomorrow() {
+        var settings = scheduled(
+            ChimeSchedule(start: TimeOfDay(hour: 9), end: TimeOfDay(hour: 12)),
+            ChimeSchedule(start: TimeOfDay(hour: 11), end: TimeOfDay(hour: 17))
+        )
+        settings.snoozeToday(true, at: date(8), calendar: calendar)
 
+        #expect(!settings.chimes(at: date(10), calendar: calendar))
         #expect(!settings.chimes(at: date(14, 20), calendar: calendar))
         #expect(settings.chimes(at: date(day: 16, 9), calendar: calendar))
         #expect(settings.chimes(on: .thursday, at: TimeOfDay(hour: 14, minute: 20)))
-    }
-
-    @Test func overlappingScheduleStillChimesWhenOneIsSkipped() {
-        var settings = scheduled(
-            ChimeSchedule(start: TimeOfDay(hour: 9), end: TimeOfDay(hour: 12)),
-            ChimeSchedule(start: TimeOfDay(hour: 11), end: TimeOfDay(hour: 14))
-        )
-        settings.schedules[0].skipToday(true, at: date(8), calendar: calendar)
-
-        #expect(!settings.chimes(at: date(10), calendar: calendar))
-        #expect(settings.chimes(at: date(11, 30), calendar: calendar))
     }
 
     @Test func todaysSchedulesAreActiveAndSortedByStart() {
