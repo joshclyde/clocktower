@@ -113,6 +113,8 @@ struct SettingsView: View {
                 }
             }
         }
+        // Scrolling closes the keyboard, which ends editing and saves the message.
+        .scrollDismissesKeyboard(.interactively)
     }
 
     /// The top section: Off / On / Schedule, and today's schedules while set to Schedule.
@@ -157,10 +159,13 @@ struct SettingsView: View {
             LabeledContent("Before") {
                 TextField("Before", text: $messageDraft.prefix, prompt: Text("e.g. Stand up"))
                     .focused($messageField, equals: .prefix)
+                    // Return closes the keyboard, which ends editing and saves the message.
+                    .submitLabel(.done)
             }
             LabeledContent("After") {
                 TextField("After", text: $messageDraft.suffix, prompt: Text("e.g. and stretch"))
                     .focused($messageField, equals: .suffix)
+                    .submitLabel(.done)
             }
         } header: {
             Text("Message")
