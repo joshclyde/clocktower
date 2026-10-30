@@ -6,15 +6,16 @@ Notifications at clock-aligned intervals, e.g. every 15 min → 1:00, 1:15, 1:30
 
 | Surface | Behavior |
 | --- | --- |
-| iOS app | Top to bottom: a **Chimes** section with an **Off / On / Schedule** choice (three buttons, filled red / green / blue when selected) and **Today** (see below), with a description under it: the interval and 3 example times in the chosen clock format (e.g. "Get notifications every 5 minutes, all day." / "Example: 1:00 PM, 1:05 PM, 1:10 PM"; "… during your schedules." for Schedule), "No chimes scheduled. Choose On or turn on a schedule.", or "Chimes are off." · interval buttons **5 / 10 / 15 / 20 / 30 / 60 min** (single select) · message **"1:20 PM"** or **"The time is 1:20 PM"** · clock **12-hour / 24-hour** · **Time Sensitive** toggle · **Schedules** (see below) · Tips |
-| watchOS app | Same controls as iOS, except schedules: each schedule's toggle, but adding and editing schedules is on the iPhone. No Tips |
+| iOS app | Top to bottom: a **Chimes** section with an **Off / On / Schedule** choice (three buttons, filled red / green / blue when selected) and **Today** (see below), with a description under it: the interval and 3 example times in the chosen clock format (e.g. "Get notifications every 5 minutes, all day." / "Example: 1:00 PM, 1:05 PM, 1:10 PM"; "… during your schedules." for Schedule), "No chimes scheduled. Choose On or turn on a schedule.", or "Chimes are off." · interval buttons **5 / 10 / 15 / 20 / 30 / 60 min** (single select) · **Message**: an example of the message, clock **12-hour / 24-hour**, then text before and after the time (see below) · **Time Sensitive** toggle · **Schedules** (see below) · Tips |
+| watchOS app | Same controls as iOS, except schedules: each schedule's toggle, but adding and editing schedules is on the iPhone. The message is shown but edited on the iPhone. No Tips |
 | iOS widget | Bell icon and text show Off vs. on (On or Schedule) (display only); tap opens the app |
 | watchOS complication | Bell icon shows Off vs. on (`bell.slash` / `bell.fill`); tap opens the watch app |
 
 - **Today**: rows under Off / On / Schedule for the active schedules on today's weekday, by start time ("9:00 AM – 5:00 PM" / "Today"), shown only while set to Schedule. A window that hasn't passed has a toggle that turns that schedule off for the rest of today; once it has passed it shows **Done** (or **Skipped**, if turned off) and no toggle. The footer adds that turning one off lasts until midnight. Refreshes every minute.
 - **Schedules** has one row per schedule ("9:00 AM – 5:00 PM" / "Weekdays") with its own toggle, and **Add Schedule**. Tapping a row opens the editor: start time, end time, and day buttons S M T W T F S (all selected for a new schedule). Either time can be set freely. An end at or before the start turns the End label red with "End time must be after the start time." under it, and no days shows "Select at least one day."; Save (Add) stays disabled until both are fixed. Delete from the editor or by swiping the row.
+- **Message**: every chime is the user's optional text before the time, the time, and optional text after it ("Stand up 1:20 PM and stretch"); with neither, just the time ("1:20 PM"). The section starts with a gray row showing the whole message for 1:20 PM ("Example: Stand up 1:20 PM and stretch", updating while typing), then the clock choice, then the fields "Text before the time" and "Text after the time". Both fields are optional; while one is being edited and has text, an ⓧ on its right clears it. "Text after the time" doesn't capitalize its first letter, since it continues the sentence. The keyboard's Return key reads **done** in both fields and closes the keyboard, as does starting to scroll the page. The text is saved when editing ends that way (or the app is left), not on every keystroke. The finished message has exactly one space between each part and the time, however many (or few) spaces were typed.
 - Chimes land on clock boundaries (20 min → :00, :20, :40), not relative to when enabled.
-- Defaults: **On, 20 min, "1:20 PM", 12-hour, Time Sensitive off, no schedules**.
+- Defaults: **On, 20 min, empty before and after text ("1:20 PM"), 12-hour, Time Sensitive off, no schedules**.
 - Notification permission is requested on first launch. If denied, the app shows a banner linking to Settings.
 - Opening the iOS app (launch or foreground) clears delivered chimes from Notification Center, on the iPhone and (mirrored) the watch (watch to confirm on device).
 - When notifications are allowed, a **Tips** section at the bottom of the iOS settings says so and shows whether Siri announces chimes (Announce Notifications), with a link to Settings when it doesn't.
@@ -24,9 +25,10 @@ Notifications at clock-aligned intervals, e.g. every 15 min → 1:00, 1:15, 1:30
 
 ```swift
 enum ChimeInterval: Int, Codable, CaseIterable { case m5 = 5, m10 = 10, m15 = 15, m20 = 20, m30 = 30, m60 = 60 }
-enum MessageStyle: String, Codable, CaseIterable { case timeOnly, sentence }   // "1:20 PM" / "The time is 1:20 PM"
 enum ClockFormat: String, Codable, CaseIterable { case twelveHour, twentyFourHour } // "1:20 PM" / "13:20"
 enum Weekday: Int, Codable, CaseIterable { case sunday = 1, monday, …, saturday } // Calendar weekday numbers
+
+struct CustomMessage: Codable, Equatable { var prefix = ""; var suffix = "" }  // either can be empty
 
 struct TimeOfDay: Codable, Hashable, Comparable { var hour: Int; var minute: Int }
 
@@ -45,14 +47,15 @@ struct ChimeSettings: Codable, Equatable {
     var isEnabled = true          // false = Off
     var isInfinite = true         // while enabled: true = On (every slot, every day), false = Schedule
     var interval: ChimeInterval = .m20
-    var style: MessageStyle = .timeOnly
+    var customMessage = CustomMessage()
     var clock: ClockFormat = .twelveHour
     var isTimeSensitive = false
     var schedules: [ChimeSchedule] = []
 }
 ```
 
-- Stored as one JSON blob in App Group `UserDefaults` (`group.com.joshclyde.clocktower`), shared by app + widget on each device. Fields missing from older saves take their defaults, so existing users stay On and chime as before.
+- Settings saved with the old `style` field ("1:20 PM" / "The time is 1:20 PM") ignore it and load with an empty message.
+- Stored as one JSON blob in App Group `UserDefaults` (`group.com.joshclyde.clocktower`), shared by app + widget on each device. Fields missing from older saves take their defaults, so existing users stay On and chime as before. Rules for changing saved fields: `docs/CONVENTIONS.md` → Saved data.
 - `Shared/` holds the model, store, formatter, and widget, compiled into all targets.
 - 12-hour times include AM/PM ("1:20 PM"); 24-hour times don't ("13:20").
 
@@ -120,3 +123,5 @@ iPhone = source of truth and the only scheduler
                  watch saves context to its App Group → reloads complication
 Watch notifications = iPhone notifications mirrored to the watch (no watch scheduling, no duplicates)
 ```
+
+- A change from the watch carries the watch's whole copy of the settings, which may be out of date (e.g. queued while the iPhone was out of reach). The iPhone keeps its own value for fields the watch can't edit (`customMessage`), so an old copy never replaces them.

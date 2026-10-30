@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// A selectable button used for the Chimes, interval and message options in both apps.
+/// A selectable button used for the Chimes, interval and clock options in both apps.
 struct ChoiceButton: View {
     let title: String
     let isSelected: Bool

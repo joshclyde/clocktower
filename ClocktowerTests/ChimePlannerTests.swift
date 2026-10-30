@@ -18,13 +18,41 @@ struct ChimePlannerTests {
     }
 
     @Test func defaults() {
-        #expect(ChimeSettings() == ChimeSettings(isEnabled: true, interval: .m20, style: .timeOnly, clock: .twelveHour, isTimeSensitive: false))
+        #expect(ChimeSettings() == ChimeSettings(isEnabled: true, interval: .m20, customMessage: CustomMessage(prefix: "", suffix: ""), clock: .twelveHour, isTimeSensitive: false))
     }
 
     @Test func decodesSettingsSavedBeforeTimeSensitive() throws {
         let json = #"{"isEnabled":false,"interval":30,"style":"sentence","clock":"twentyFourHour"}"#
         let settings = try JSONDecoder().decode(ChimeSettings.self, from: Data(json.utf8))
-        #expect(settings == ChimeSettings(isEnabled: false, interval: .m30, style: .sentence, clock: .twentyFourHour, isTimeSensitive: false))
+        #expect(settings == ChimeSettings(isEnabled: false, interval: .m30, clock: .twentyFourHour, isTimeSensitive: false))
+    }
+
+    @Test func oldMessageStyleLoadsWithEmptyMessage() throws {
+        let json = #"{"isEnabled":true,"interval":30,"style":"sentence","clock":"twelveHour"}"#
+        let settings = try JSONDecoder().decode(ChimeSettings.self, from: Data(json.utf8))
+        #expect(settings.customMessage == CustomMessage())
+    }
+
+    @Test func decodesCustomMessageWithMissingFields() throws {
+        let json = #"{"customMessage":{"prefix":"Stand up"}}"#
+        let settings = try JSONDecoder().decode(ChimeSettings.self, from: Data(json.utf8))
+        #expect(settings.customMessage == CustomMessage(prefix: "Stand up"))
+    }
+
+    @Test func customMessageRoundTrips() throws {
+        let settings = ChimeSettings(customMessage: CustomMessage(prefix: "Stand up", suffix: "now"))
+        let decoded = try JSONDecoder().decode(ChimeSettings.self, from: JSONEncoder().encode(settings))
+        #expect(decoded == settings)
+    }
+
+    @Test func chimesUseCustomMessage() {
+        let message = CustomMessage(prefix: "Stand up", suffix: "and stretch")
+        let repeating = requests(ChimeSettings(interval: .m60, customMessage: message), now: date(13, 7))
+        #expect(repeating.first?.body == "Stand up 12:00 AM and stretch")
+
+        let oneShots = requests(ChimeSettings(interval: .m20, customMessage: message), now: date(13, 7))
+        #expect(oneShots.first?.body == "Stand up 1:20 PM and stretch")
+        #expect(oneShots.last?.title?.hasPrefix("Stand up ") == true)
     }
 
     @Test func disabledSchedulesNothing() {
@@ -63,7 +91,7 @@ struct ChimePlannerTests {
     }
 
     @Test func lastRollingChimeAsksToReopenApp() {
-        let result = requests(ChimeSettings(interval: .m20, style: .sentence), now: date(13, 7))
+        let result = requests(ChimeSettings(interval: .m20, customMessage: CustomMessage(prefix: "The time is")), now: date(13, 7))
 
         #expect(result.first?.title == nil)
         #expect(result.first?.body == "The time is 1:20 PM")

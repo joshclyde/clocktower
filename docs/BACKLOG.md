@@ -15,7 +15,7 @@ Play a voice saying the time ("It's three fifteen") as the notification sound, s
 
 Expose each setting as an action in the Shortcuts app, so chimes can be changed from a shortcut, a Focus or time-of-day automation, Siri, or the Action button (e.g. turn chimes off at bedtime, switch to 15 min during work hours).
 
-- One App Intent per setting, or a single "Set Chime Setting" intent with a parameter per field: chimes on/off, interval, message style, clock format, Time Sensitive. Enums become `AppEnum`s (`ChimeInterval`, `MessageStyle`, `ClockFormat`).
+- One App Intent per setting, or a single "Set Chime Setting" intent with a parameter per field: chimes on/off, interval, message (before / after text), clock format, Time Sensitive. Enums become `AppEnum`s (`ChimeInterval`, `ClockFormat`).
 - Probably also a "Get Chime Settings" intent so shortcuts can branch on the current values.
 - Each intent applies the change the same way `ChimeController.update` does: save to `SettingsStore`, reschedule via `ChimeScheduler`, and push to the watch with `PhoneSync`. It may run without the app in the foreground, so that path can't depend on SwiftUI state. Reload widget timelines after.
 - Register `AppShortcutsProvider` phrases so the common ones ("Turn off Clocktower chimes") work in Siri and Spotlight without the user building a shortcut.
@@ -61,7 +61,7 @@ Stop the iOS app from rotating on iPhone; it should stay in portrait. The settin
 
 Look over the watch app and decide what should be condensed or left out, instead of mirroring every section of the iPhone app. Today `ClocktowerWatch/SettingsView.swift` repeats nearly the whole iPhone page (Off / On / Schedule with today's schedules, Every, Message, Clock, Time Sensitive, Schedules), so changing anything means a lot of scrolling and small buttons on a small screen.
 
-- Go through each section and decide whether it belongs on the watch: kept as is, condensed (e.g. one row that opens a picker on its own screen, showing the current value), or left to the iPhone. Likely candidates for the iPhone only are the ones set once and rarely changed, such as Message style and Clock format; Off / On / Schedule, Every, and today's schedules are the ones worth reaching from the wrist.
+- Go through each section and decide whether it belongs on the watch: kept as is, condensed (e.g. one row that opens a picker on its own screen, showing the current value), or left to the iPhone. Likely candidates for the iPhone only are the ones set once and rarely changed, such as Clock format (the message is already edited only on the iPhone); Off / On / Schedule, Every, and today's schedules are the ones worth reaching from the wrist.
 - Consider splitting the page into a short main screen (on/off state and what's next) with the rest behind a `NavigationLink` or two.
 - Anything left off the watch still syncs from the iPhone through `PhoneSync` / `WatchSync`, so it only needs a footer pointing to the iPhone, as the Schedules section already does.
 - Open questions: whether the watch should still be usable on its own when the iPhone isn't nearby, and how this fits with the complication (see "Widget and complication for schedules" above).

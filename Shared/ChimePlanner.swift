@@ -122,6 +122,6 @@ enum ChimePlanner {
     }
 
     private static func message(hour: Int, minute: Int, _ settings: ChimeSettings) -> String {
-        ChimeText.message(hour: hour, minute: minute, style: settings.style, clock: settings.clock)
+        ChimeText.message(hour: hour, minute: minute, clock: settings.clock, customMessage: settings.customMessage)
     }
 }

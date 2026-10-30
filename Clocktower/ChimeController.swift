@@ -12,7 +12,7 @@ final class ChimeController {
 
     init() {
         PhoneSync.shared.onReceive = { [weak self] settings in
-            Task { @MainActor in self?.apply(settings) }
+            Task { @MainActor in self?.receive(settings) }
         }
         PhoneSync.shared.activate()
     }
@@ -49,6 +49,14 @@ final class ChimeController {
 
         ChimeScheduler.reschedule(settings)
         PhoneSync.shared.push(settings)
+    }
+
+    /// A change made on the watch. The watch sends its whole copy of the settings, which may be out
+    /// of date (e.g. sent while it was out of reach), so fields it can't edit keep the iPhone's values.
+    private func receive(_ settings: ChimeSettings) {
+        var settings = settings
+        settings.customMessage = self.settings.customMessage
+        apply(settings)
     }
 
     private func apply(_ settings: ChimeSettings) {
