@@ -123,3 +123,5 @@ iPhone = source of truth and the only scheduler
                  watch saves context to its App Group → reloads complication
 Watch notifications = iPhone notifications mirrored to the watch (no watch scheduling, no duplicates)
 ```
+
+- A change from the watch carries the watch's whole copy of the settings, which may be out of date (e.g. queued while the iPhone was out of reach). The iPhone keeps its own value for fields the watch can't edit (`customMessage`), so an old copy never replaces them.
