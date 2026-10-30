@@ -28,17 +28,18 @@ struct ChimePlannerTests {
     }
 
     @Test func customMessageRoundTrips() throws {
-        let settings = ChimeSettings(style: .custom, customMessage: "Stand up")
+        let settings = ChimeSettings(style: .custom, customMessage: CustomMessage(prefix: "Stand up", suffix: "now"))
         let decoded = try JSONDecoder().decode(ChimeSettings.self, from: JSONEncoder().encode(settings))
         #expect(decoded == settings)
     }
 
     @Test func chimesUseCustomMessage() {
-        let repeating = requests(ChimeSettings(interval: .m60, style: .custom, customMessage: "Stand up"), now: date(13, 7))
-        #expect(repeating.first?.body == "Stand up 12:00 AM")
+        let message = CustomMessage(prefix: "Stand up", suffix: "and stretch")
+        let repeating = requests(ChimeSettings(interval: .m60, style: .custom, customMessage: message), now: date(13, 7))
+        #expect(repeating.first?.body == "Stand up 12:00 AM and stretch")
 
-        let oneShots = requests(ChimeSettings(interval: .m20, style: .custom, customMessage: "Stand up"), now: date(13, 7))
-        #expect(oneShots.first?.body == "Stand up 1:20 PM")
+        let oneShots = requests(ChimeSettings(interval: .m20, style: .custom, customMessage: message), now: date(13, 7))
+        #expect(oneShots.first?.body == "Stand up 1:20 PM and stretch")
         #expect(oneShots.last?.title?.hasPrefix("Stand up ") == true)
     }
 

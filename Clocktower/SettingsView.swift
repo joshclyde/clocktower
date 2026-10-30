@@ -4,6 +4,7 @@ struct SettingsView: View {
     @Environment(ChimeController.self) private var controller
     /// The schedule open in the editor sheet; new ones aren't in `settings.schedules` until added.
     @State private var editing: ChimeSchedule?
+    @State private var isEditingMessage = false
 
     private var settings: ChimeSettings { controller.settings }
     private let notificationSettingsURL = URL(string: UIApplication.openNotificationSettingsURLString)!
@@ -18,6 +19,14 @@ struct SettingsView: View {
                 form(now: context.date)
             }
             .navigationTitle("Clocktower")
+            .sheet(isPresented: $isEditingMessage) {
+                CustomMessageEditor(message: settings.customMessage, clock: settings.clock) { message in
+                    controller.update { settings in
+                        settings.customMessage = message
+                        settings.style = .custom
+                    }
+                }
+            }
             .sheet(item: $editing) { schedule in
                 ScheduleEditor(
                     schedule: schedule,
@@ -124,7 +133,7 @@ struct SettingsView: View {
         }
     }
 
-    /// The clock format and message styles, and a field for the custom message while that style is chosen.
+    /// The clock format and message styles. Custom opens the editor, and is chosen once its message is saved.
     private var messageSection: some View {
         Section {
             Picker("Clock", selection: controller.binding(\.clock)) {
@@ -139,21 +148,19 @@ struct SettingsView: View {
                         title: ChimeText.sample(style: style, clock: settings.clock, customMessage: settings.customMessage),
                         isSelected: settings.style == style
                     ) {
-                        controller.update { $0.style = style }
+                        if style == .custom {
+                            isEditingMessage = true
+                        } else {
+                            controller.update { $0.style = style }
+                        }
                     }
-                }
-            }
-            if settings.style == .custom {
-                CustomMessageField(message: settings.customMessage) { message in
-                    guard message != settings.customMessage else { return }
-                    controller.update { $0.customMessage = message }
                 }
             }
         } header: {
             Text("Message")
         } footer: {
             if settings.style == .custom {
-                Text("Chimes show your message, then the time.")
+                Text("Tap your message to change it.")
             }
         }
     }
@@ -182,40 +189,6 @@ struct SettingsView: View {
                 ? "Chimes only during these windows."
                 : "Choose Schedule above to chime only during these windows.")
         }
-    }
-}
-
-/// Edits the custom message. Saves when editing ends rather than on every keystroke, since each
-/// save reschedules every chime and syncs the watch.
-private struct CustomMessageField: View {
-    let message: String
-    let save: (String) -> Void
-    @State private var draft: String
-    @FocusState private var isFocused: Bool
-
-    init(message: String, save: @escaping (String) -> Void) {
-        self.message = message
-        self.save = save
-        _draft = State(initialValue: message)
-    }
-
-    var body: some View {
-        TextField("Your message, e.g. Stand up", text: $draft)
-            .focused($isFocused)
-            .submitLabel(.done)
-            .onChange(of: isFocused) {
-                if !isFocused { commit() }
-            }
-            // Choosing another style removes the field without ending editing first.
-            .onDisappear(perform: commit)
-            // Changed on the watch.
-            .onChange(of: message) {
-                if !isFocused { draft = message }
-            }
-    }
-
-    private func commit() {
-        save(draft.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 }
 

@@ -18,21 +18,24 @@ enum ChimeText {
         self.time(hour: time.hour, minute: time.minute, clock: clock)
     }
 
-    /// The custom style puts `customMessage` before the time; with no message it's just the time.
-    static func message(hour: Int, minute: Int, style: MessageStyle, clock: ClockFormat, customMessage: String = "") -> String {
+    /// The custom style puts the prefix and suffix around the time, one space on each side however
+    /// they were typed ("Stand up" + "1:20 PM" + "and stretch").
+    static func message(hour: Int, minute: Int, style: MessageStyle, clock: ClockFormat, customMessage: CustomMessage = CustomMessage()) -> String {
         let time = time(hour: hour, minute: minute, clock: clock)
         switch style {
         case .timeOnly: return time
         case .sentence: return "The time is \(time)"
         case .custom:
-            let custom = customMessage.trimmingCharacters(in: .whitespacesAndNewlines)
-            return custom.isEmpty ? time : "\(custom) \(time)"
+            return [customMessage.prefix, time, customMessage.suffix]
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+                .joined(separator: " ")
         }
     }
 
     /// Example message shown in the settings UI. "Custom" for the custom style until it has a message.
-    static func sample(style: MessageStyle, clock: ClockFormat, customMessage: String = "") -> String {
-        if style == .custom, customMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+    static func sample(style: MessageStyle, clock: ClockFormat, customMessage: CustomMessage = CustomMessage()) -> String {
+        if style == .custom, !customMessage.isValid {
             return "Custom"
         }
         return message(hour: 13, minute: 20, style: style, clock: clock, customMessage: customMessage)

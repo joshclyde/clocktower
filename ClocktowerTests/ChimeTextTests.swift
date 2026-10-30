@@ -21,19 +21,39 @@ struct ChimeTextTests {
         #expect(ChimeText.message(hour: 13, minute: 20, style: .sentence, clock: .twentyFourHour) == "The time is 13:20")
     }
 
-    @Test func customMessageComesBeforeTheTime() {
-        #expect(ChimeText.message(hour: 13, minute: 20, style: .custom, clock: .twelveHour, customMessage: "Stand up") == "Stand up 1:20 PM")
-        #expect(ChimeText.message(hour: 13, minute: 20, style: .custom, clock: .twentyFourHour, customMessage: "  Drink water\n") == "Drink water 13:20")
+    func custom(_ prefix: String, _ suffix: String, clock: ClockFormat = .twelveHour) -> String {
+        ChimeText.message(hour: 13, minute: 20, style: .custom, clock: clock, customMessage: CustomMessage(prefix: prefix, suffix: suffix))
+    }
+
+    @Test func customMessageGoesAroundTheTime() {
+        #expect(custom("Stand up", "") == "Stand up 1:20 PM")
+        #expect(custom("", "time to move") == "1:20 PM time to move")
+        #expect(custom("Stand up", "and stretch") == "Stand up 1:20 PM and stretch")
+        #expect(custom("Stand up", "", clock: .twentyFourHour) == "Stand up 13:20")
+    }
+
+    @Test func customMessageHasOneSpaceAroundTheTime() {
+        #expect(custom("It's", "now") == "It's 1:20 PM now")
+        #expect(custom("It's   ", "   now") == "It's 1:20 PM now")
+        #expect(custom("  It's", "now  ") == "It's 1:20 PM now")
     }
 
     @Test func emptyCustomMessageIsJustTheTime() {
-        #expect(ChimeText.message(hour: 13, minute: 20, style: .custom, clock: .twelveHour) == "1:20 PM")
-        #expect(ChimeText.message(hour: 13, minute: 20, style: .custom, clock: .twelveHour, customMessage: "   ") == "1:20 PM")
+        #expect(custom("", "") == "1:20 PM")
+        #expect(custom("   ", " ") == "1:20 PM")
+    }
+
+    @Test func customMessageNeedsPrefixOrSuffix() {
+        #expect(!CustomMessage().isValid)
+        #expect(!CustomMessage(prefix: "  ", suffix: " ").isValid)
+        #expect(CustomMessage(prefix: "Stand up").isValid)
+        #expect(CustomMessage(suffix: "now").isValid)
+        #expect(CustomMessage(prefix: "It's", suffix: "now").isValid)
     }
 
     @Test func customSample() {
         #expect(ChimeText.sample(style: .custom, clock: .twelveHour) == "Custom")
-        #expect(ChimeText.sample(style: .custom, clock: .twelveHour, customMessage: "Stand up") == "Stand up 1:20 PM")
+        #expect(ChimeText.sample(style: .custom, clock: .twelveHour, customMessage: CustomMessage(prefix: "Stand up")) == "Stand up 1:20 PM")
     }
 
     @Test func descriptionGivesExampleTimes() {
