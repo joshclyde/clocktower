@@ -41,6 +41,17 @@ struct CustomMessage: Codable, Equatable {
     var suffix = ""
 }
 
+extension CustomMessage {
+    /// Decodes field by field so messages saved before a field existed still load.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        prefix = try container.decodeIfPresent(String.self, forKey: .prefix) ?? ""
+        suffix = try container.decodeIfPresent(String.self, forKey: .suffix) ?? ""
+    }
+}
+
+/// Saved on each device and synced between the iPhone and the watch. Before adding, removing or
+/// renaming a field here or in a type inside it, see docs/CONVENTIONS.md → Saved data.
 struct ChimeSettings: Codable, Equatable {
     /// False for Off. See `mode`.
     var isEnabled = true

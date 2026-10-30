@@ -2,6 +2,10 @@
 
 iOS + watchOS app (with iOS widget and watchOS complication). The Xcode project is generated from `project.yml` with XcodeGen; see `DEV_WORKFLOW.md`.
 
+## Conventions
+
+Follow `docs/CONVENTIONS.md`. Read its **Saved data** section before adding, removing or renaming anything in `ChimeSettings` or a type inside it: a field that fails to decode resets every setting.
+
 ## Workflow
 
 - Always open a pull request for your changes once they're pushed.

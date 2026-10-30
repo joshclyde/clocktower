@@ -33,6 +33,12 @@ struct ChimePlannerTests {
         #expect(settings.customMessage == CustomMessage())
     }
 
+    @Test func decodesCustomMessageWithMissingFields() throws {
+        let json = #"{"customMessage":{"prefix":"Stand up"}}"#
+        let settings = try JSONDecoder().decode(ChimeSettings.self, from: Data(json.utf8))
+        #expect(settings.customMessage == CustomMessage(prefix: "Stand up"))
+    }
+
     @Test func customMessageRoundTrips() throws {
         let settings = ChimeSettings(customMessage: CustomMessage(prefix: "Stand up", suffix: "now"))
         let decoded = try JSONDecoder().decode(ChimeSettings.self, from: JSONEncoder().encode(settings))

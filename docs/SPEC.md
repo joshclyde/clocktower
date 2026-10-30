@@ -55,7 +55,7 @@ struct ChimeSettings: Codable, Equatable {
 ```
 
 - Settings saved with the old `style` field ("1:20 PM" / "The time is 1:20 PM") ignore it and load with an empty message.
-- Stored as one JSON blob in App Group `UserDefaults` (`group.com.joshclyde.clocktower`), shared by app + widget on each device. Fields missing from older saves take their defaults, so existing users stay On and chime as before.
+- Stored as one JSON blob in App Group `UserDefaults` (`group.com.joshclyde.clocktower`), shared by app + widget on each device. Fields missing from older saves take their defaults, so existing users stay On and chime as before. Rules for changing saved fields: `docs/CONVENTIONS.md` → Saved data.
 - `Shared/` holds the model, store, formatter, and widget, compiled into all targets.
 - 12-hour times include AM/PM ("1:20 PM"); 24-hour times don't ("13:20").
 
