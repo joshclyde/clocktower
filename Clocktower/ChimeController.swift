@@ -30,12 +30,14 @@ final class ChimeController {
         apply(updated)
     }
 
-    /// Called when the app becomes active: picks up widget changes, asks for notification
-    /// permission on first launch, refills the notification window, and syncs the watch.
+    /// Called when the app becomes active: picks up widget changes, clears past chimes, asks for
+    /// notification permission on first launch, refills the notification window, and syncs the watch.
     func refresh() async {
         settings = SettingsStore.load()
 
         let center = UNUserNotificationCenter.current()
+        // Past chimes are stale once the app is open. The watch mirrors these, so they should clear there too.
+        center.removeAllDeliveredNotifications()
         // First launch only: shows the system "Allow Notifications?" prompt. iOS allows asking once.
         if await center.notificationSettings().authorizationStatus == .notDetermined {
             _ = try? await center.requestAuthorization(options: [.alert, .sound])
