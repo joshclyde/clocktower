@@ -54,6 +54,8 @@ struct SettingsView: View {
 
             Section {
                 Toggle("Time Sensitive", isOn: controller.binding(\.isTimeSensitive))
+            } header: {
+                Text("Focus")
             } footer: {
                 Text("Chimes come through even when a Focus is on.")
             }

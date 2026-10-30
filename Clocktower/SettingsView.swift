@@ -83,6 +83,8 @@ struct SettingsView: View {
                 Toggle(isOn: controller.binding(\.isTimeSensitive)) {
                     Label("Time Sensitive", systemImage: "moon")
                 }
+            } header: {
+                Text("Focus")
             } footer: {
                 Text("Chimes come through even when a Focus is on.")
             }
