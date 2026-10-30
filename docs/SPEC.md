@@ -6,15 +6,16 @@ Notifications at clock-aligned intervals, e.g. every 15 min → 1:00, 1:15, 1:30
 
 | Surface | Behavior |
 | --- | --- |
-| iOS app | Top to bottom: a **Chimes** section with an **Off / On / Schedule** choice (three buttons, filled red / green / blue when selected) and **Today** (see below), with a description under it: the interval and 3 example times in the chosen clock format (e.g. "Get notifications every 5 minutes, all day." / "Example: 1:00 PM, 1:05 PM, 1:10 PM"; "… during your schedules." for Schedule), "No chimes scheduled. Choose On or turn on a schedule.", or "Chimes are off." · interval buttons **5 / 10 / 15 / 20 / 30 / 60 min** (single select) · message **"1:20 PM"** or **"The time is 1:20 PM"** · clock **12-hour / 24-hour** · **Time Sensitive** toggle · **Schedules** (see below) · Tips |
-| watchOS app | Same controls as iOS, except schedules: each schedule's toggle, but adding and editing schedules is on the iPhone. No Tips |
+| iOS app | Top to bottom: a **Chimes** section with an **Off / On / Schedule** choice (three buttons, filled red / green / blue when selected) and **Today** (see below), with a description under it: the interval and 3 example times in the chosen clock format (e.g. "Get notifications every 5 minutes, all day." / "Example: 1:00 PM, 1:05 PM, 1:10 PM"; "… during your schedules." for Schedule), "No chimes scheduled. Choose On or turn on a schedule.", or "Chimes are off." · interval buttons **5 / 10 / 15 / 20 / 30 / 60 min** (single select) · message **"1:20 PM"**, **"The time is 1:20 PM"**, or **Custom** (see below) · clock **12-hour / 24-hour** · **Time Sensitive** toggle · **Schedules** (see below) · Tips |
+| watchOS app | Same controls as iOS, except schedules: each schedule's toggle, but adding and editing schedules is on the iPhone. The custom message can be chosen but is written on the iPhone. No Tips |
 | iOS widget | Bell icon and text show Off vs. on (On or Schedule) (display only); tap opens the app |
 | watchOS complication | Bell icon shows Off vs. on (`bell.slash` / `bell.fill`); tap opens the watch app |
 
 - **Today**: rows under Off / On / Schedule for the active schedules on today's weekday, by start time ("9:00 AM – 5:00 PM" / "Today"), shown only while set to Schedule. A window that hasn't passed has a toggle that turns that schedule off for the rest of today; once it has passed it shows **Done** (or **Skipped**, if turned off) and no toggle. The footer adds that turning one off lasts until midnight. Refreshes every minute.
 - **Schedules** has one row per schedule ("9:00 AM – 5:00 PM" / "Weekdays") with its own toggle, and **Add Schedule**. Tapping a row opens the editor: start time, end time, and day buttons S M T W T F S (all selected for a new schedule). Either time can be set freely. An end at or before the start turns the End label red with "End time must be after the start time." under it, and no days shows "Select at least one day."; Save (Add) stays disabled until both are fixed. Delete from the editor or by swiping the row.
+- **Custom** message: the user's own words, then the time ("Stand up 1:20 PM"). Choosing it shows a text field under the message buttons and the footer "Chimes show your message, then the time."; the button shows the message ("Stand up 1:20 PM"), or "Custom" while it's empty. With no message, chimes show just the time. Saved (trimmed) when editing ends, not on every keystroke.
 - Chimes land on clock boundaries (20 min → :00, :20, :40), not relative to when enabled.
-- Defaults: **On, 20 min, "1:20 PM", 12-hour, Time Sensitive off, no schedules**.
+- Defaults: **On, 20 min, "1:20 PM" (custom message empty), 12-hour, Time Sensitive off, no schedules**.
 - Notification permission is requested on first launch. If denied, the app shows a banner linking to Settings.
 - When notifications are allowed, a **Tips** section at the bottom of the iOS settings says so and shows whether Siri announces chimes (Announce Notifications), with a link to Settings when it doesn't.
 - Default notification sound. Interruption level is standard, or Time Sensitive (comes through a Focus) when that toggle is on.
@@ -23,7 +24,7 @@ Notifications at clock-aligned intervals, e.g. every 15 min → 1:00, 1:15, 1:30
 
 ```swift
 enum ChimeInterval: Int, Codable, CaseIterable { case m5 = 5, m10 = 10, m15 = 15, m20 = 20, m30 = 30, m60 = 60 }
-enum MessageStyle: String, Codable, CaseIterable { case timeOnly, sentence }   // "1:20 PM" / "The time is 1:20 PM"
+enum MessageStyle: String, Codable, CaseIterable { case timeOnly, sentence, custom }   // "1:20 PM" / "The time is 1:20 PM" / "Stand up 1:20 PM"
 enum ClockFormat: String, Codable, CaseIterable { case twelveHour, twentyFourHour } // "1:20 PM" / "13:20"
 enum Weekday: Int, Codable, CaseIterable { case sunday = 1, monday, …, saturday } // Calendar weekday numbers
 
@@ -45,6 +46,7 @@ struct ChimeSettings: Codable, Equatable {
     var isInfinite = true         // while enabled: true = On (every slot, every day), false = Schedule
     var interval: ChimeInterval = .m20
     var style: MessageStyle = .timeOnly
+    var customMessage = ""        // for .custom, shown before the time
     var clock: ClockFormat = .twelveHour
     var isTimeSensitive = false
     var schedules: [ChimeSchedule] = []

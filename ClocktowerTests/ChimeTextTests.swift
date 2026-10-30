@@ -21,6 +21,21 @@ struct ChimeTextTests {
         #expect(ChimeText.message(hour: 13, minute: 20, style: .sentence, clock: .twentyFourHour) == "The time is 13:20")
     }
 
+    @Test func customMessageComesBeforeTheTime() {
+        #expect(ChimeText.message(hour: 13, minute: 20, style: .custom, clock: .twelveHour, customMessage: "Stand up") == "Stand up 1:20 PM")
+        #expect(ChimeText.message(hour: 13, minute: 20, style: .custom, clock: .twentyFourHour, customMessage: "  Drink water\n") == "Drink water 13:20")
+    }
+
+    @Test func emptyCustomMessageIsJustTheTime() {
+        #expect(ChimeText.message(hour: 13, minute: 20, style: .custom, clock: .twelveHour) == "1:20 PM")
+        #expect(ChimeText.message(hour: 13, minute: 20, style: .custom, clock: .twelveHour, customMessage: "   ") == "1:20 PM")
+    }
+
+    @Test func customSample() {
+        #expect(ChimeText.sample(style: .custom, clock: .twelveHour) == "Custom")
+        #expect(ChimeText.sample(style: .custom, clock: .twelveHour, customMessage: "Stand up") == "Stand up 1:20 PM")
+    }
+
     @Test func descriptionGivesExampleTimes() {
         #expect(ChimeText.appDescription(for: ChimeSettings(interval: .m5))
             == "Get notifications every 5 minutes, all day.\nExample: 1:00 PM, 1:05 PM, 1:10 PM")

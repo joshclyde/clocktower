@@ -18,17 +18,24 @@ enum ChimeText {
         self.time(hour: time.hour, minute: time.minute, clock: clock)
     }
 
-    static func message(hour: Int, minute: Int, style: MessageStyle, clock: ClockFormat) -> String {
+    /// The custom style puts `customMessage` before the time; with no message it's just the time.
+    static func message(hour: Int, minute: Int, style: MessageStyle, clock: ClockFormat, customMessage: String = "") -> String {
         let time = time(hour: hour, minute: minute, clock: clock)
         switch style {
         case .timeOnly: return time
         case .sentence: return "The time is \(time)"
+        case .custom:
+            let custom = customMessage.trimmingCharacters(in: .whitespacesAndNewlines)
+            return custom.isEmpty ? time : "\(custom) \(time)"
         }
     }
 
-    /// Example message shown in the settings UI.
-    static func sample(style: MessageStyle, clock: ClockFormat) -> String {
-        message(hour: 13, minute: 20, style: style, clock: clock)
+    /// Example message shown in the settings UI. "Custom" for the custom style until it has a message.
+    static func sample(style: MessageStyle, clock: ClockFormat, customMessage: String = "") -> String {
+        if style == .custom, customMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return "Custom"
+        }
+        return message(hour: 13, minute: 20, style: style, clock: clock, customMessage: customMessage)
     }
 
     /// Shown under the Chimes toggle, e.g. "Get notifications every 5 minutes.\nExample: 1:00 PM, 1:05 PM, 1:10 PM".

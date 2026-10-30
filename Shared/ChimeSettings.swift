@@ -11,6 +11,7 @@ enum ChimeInterval: Int, Codable, CaseIterable, Identifiable {
 enum MessageStyle: String, Codable, CaseIterable, Identifiable {
     case timeOnly   // "1:20 PM"
     case sentence   // "The time is 1:20 PM"
+    case custom     // "Stand up 1:20 PM": `ChimeSettings.customMessage`, then the time
 
     var id: Self { self }
 }
@@ -49,6 +50,8 @@ struct ChimeSettings: Codable, Equatable {
     var isInfinite = true
     var interval: ChimeInterval = .m20
     var style: MessageStyle = .timeOnly
+    /// The user's own words for the `.custom` style, shown before the time.
+    var customMessage = ""
     var clock: ClockFormat = .twelveHour
     /// Deliver chimes as Time Sensitive so they come through a Focus.
     var isTimeSensitive = false
@@ -77,6 +80,7 @@ extension ChimeSettings {
         isInfinite = try container.decodeIfPresent(Bool.self, forKey: .isInfinite) ?? defaults.isInfinite
         interval = try container.decodeIfPresent(ChimeInterval.self, forKey: .interval) ?? defaults.interval
         style = try container.decodeIfPresent(MessageStyle.self, forKey: .style) ?? defaults.style
+        customMessage = try container.decodeIfPresent(String.self, forKey: .customMessage) ?? defaults.customMessage
         clock = try container.decodeIfPresent(ClockFormat.self, forKey: .clock) ?? defaults.clock
         isTimeSensitive = try container.decodeIfPresent(Bool.self, forKey: .isTimeSensitive) ?? defaults.isTimeSensitive
         schedules = try container.decodeIfPresent([ChimeSchedule].self, forKey: .schedules) ?? defaults.schedules

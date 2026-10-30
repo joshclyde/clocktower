@@ -27,6 +27,21 @@ struct ChimePlannerTests {
         #expect(settings == ChimeSettings(isEnabled: false, interval: .m30, style: .sentence, clock: .twentyFourHour, isTimeSensitive: false))
     }
 
+    @Test func customMessageRoundTrips() throws {
+        let settings = ChimeSettings(style: .custom, customMessage: "Stand up")
+        let decoded = try JSONDecoder().decode(ChimeSettings.self, from: JSONEncoder().encode(settings))
+        #expect(decoded == settings)
+    }
+
+    @Test func chimesUseCustomMessage() {
+        let repeating = requests(ChimeSettings(interval: .m60, style: .custom, customMessage: "Stand up"), now: date(13, 7))
+        #expect(repeating.first?.body == "Stand up 12:00 AM")
+
+        let oneShots = requests(ChimeSettings(interval: .m20, style: .custom, customMessage: "Stand up"), now: date(13, 7))
+        #expect(oneShots.first?.body == "Stand up 1:20 PM")
+        #expect(oneShots.last?.title?.hasPrefix("Stand up ") == true)
+    }
+
     @Test func disabledSchedulesNothing() {
         var settings = ChimeSettings()
         settings.isEnabled = false

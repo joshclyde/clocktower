@@ -30,7 +30,7 @@ struct SettingsView: View {
                 .listRowBackground(Color.clear)
             }
 
-            Section("Message") {
+            Section {
                 HStack {
                     ForEach(ClockFormat.allCases) { clock in
                         ChoiceButton(title: clock.shortLabel, isSelected: settings.clock == clock) {
@@ -41,12 +41,21 @@ struct SettingsView: View {
                 .listRowBackground(Color.clear)
                 VStack {
                     ForEach(MessageStyle.allCases) { style in
-                        ChoiceButton(title: ChimeText.sample(style: style, clock: settings.clock), isSelected: settings.style == style) {
+                        ChoiceButton(
+                            title: ChimeText.sample(style: style, clock: settings.clock, customMessage: settings.customMessage),
+                            isSelected: settings.style == style
+                        ) {
                             controller.update { $0.style = style }
                         }
                     }
                 }
                 .listRowBackground(Color.clear)
+            } header: {
+                Text("Message")
+            } footer: {
+                if settings.style == .custom {
+                    Text("Write your message on your iPhone.")
+                }
             }
 
             Section {
