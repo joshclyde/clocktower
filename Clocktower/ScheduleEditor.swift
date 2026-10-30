@@ -99,7 +99,7 @@ struct ScheduleEditor: View {
 }
 
 /// An inline form error under the field it's about: red, with an icon.
-struct ValidationMessage: View {
+private struct ValidationMessage: View {
     let text: String
 
     init(_ text: String) {
