@@ -61,6 +61,12 @@ struct SettingsView: View {
             }
 
             Section("Message") {
+                Picker("Clock", selection: controller.binding(\.clock)) {
+                    ForEach(ClockFormat.allCases) { clock in
+                        Text(clock.label).tag(clock)
+                    }
+                }
+                .pickerStyle(.segmented)
                 VStack {
                     ForEach(MessageStyle.allCases) { style in
                         ChoiceButton(title: ChimeText.sample(style: style, clock: settings.clock), isSelected: settings.style == style) {
@@ -68,15 +74,6 @@ struct SettingsView: View {
                         }
                     }
                 }
-            }
-
-            Section("Clock") {
-                Picker("Clock", selection: controller.binding(\.clock)) {
-                    ForEach(ClockFormat.allCases) { clock in
-                        Text(clock.label).tag(clock)
-                    }
-                }
-                .pickerStyle(.segmented)
             }
 
             Section {
